@@ -1,0 +1,32 @@
+{
+  "name": "manga scraper",
+  "description": "Build an Extension!",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "test the popup"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "run_at": "document_end",
+      "js": ["static/js/content.js"],
+      "css": ["App.css"]
+    }
+  ],
+  "permissions": [
+    "27bslash.eu.pythonanywhere.com/*",
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "icons": {
+    "16": "logo192.png",
+    "48": "logo192.png",
+    "128": "logo192.png"
+  }
+}

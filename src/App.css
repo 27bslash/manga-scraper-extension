@@ -1,0 +1,130 @@
+#manga-updater-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+#manga-overlay {
+  padding: 10px;
+  background: green;
+  color: black;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+p {
+  margin: 0;
+}
+.Popup {
+  text-align: center;
+  width: 440px;
+}
+.manga-list-popup {
+  /* background-color: rgb(231, 230, 230); */
+  /* width: 600px; */
+  max-height: 400px;
+  overflow: scroll;
+  border: solid black;
+  background-color: rgb(14, 19, 29);
+  color: grey;
+}
+.list-item-wrapper {
+  display: flex;
+  border-bottom: 1px solid gray;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px;
+}
+.list-item {
+  display: flex;
+}
+.highlight {
+  background-color: rgba(51, 54, 185, 0.452);
+}
+.options-menu {
+  /* position: fixed;
+    top: 0;
+    right: 30%; */
+  display: flex;
+  justify-content: end;
+}
+.menu-button {
+  background-color: white;
+  border: solid black 1px;
+  padding: 5px;
+  margin-right: 5px;
+  text-transform: capitalize;
+}
+.menu-button:hover {
+  background-color: rgb(236, 129, 147);
+  cursor: pointer;
+}
+.chapter-details {
+  display: flex;
+}
+.chapter-details > * {
+  margin-right: 10px;
+}
+
+a {
+  text-decoration: none;
+  color: black;
+}
+a:hover {
+  cursor: pointer;
+  color: rgb(133, 133, 202);
+}
+/* '#a7bbd457' */
+.list-item:hover {
+  background-color: rgb(198, 198, 207);
+}
+.list-item {
+  position: relative;
+}
+.list-item:after {
+  content: "";
+  background: #c1c4c9;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 50%;
+  width: 1px;
+}
+.list-item-text {
+  margin-right: 0px;
+  font-size: 14px;
+}
+#chapter-text {
+  /* border: solid 1px black; */
+  border-radius: 10px;
+}
+.text-small {
+  font-size: 11px;
+  color: rgb(75, 75, 75)
+}
