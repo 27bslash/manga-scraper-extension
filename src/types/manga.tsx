@@ -1,10 +1,12 @@
 interface Manga {
     title: string,
     chapter: string,
-    latest?: string,
+    latest: string,
     link: string,
     domain: string,
     scansite: string,
-    read: boolean
+    read: boolean,
+    current_source: string,
+    sources: { [key: string]: { url: string, latest: string, latest_link: string } }
 }
 export default Manga
