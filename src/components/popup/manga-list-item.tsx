@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -7,22 +7,73 @@ import IconButton from '@mui/material/IconButton';
 import { Grid } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import OptionsMenu from "./options-menu";
+import Manga from './../../types/manga';
 
-
-const MListItem = (props: any) => {
+interface MListItemProps {
+    data: Manga
+    showAll: boolean,
+    idx: number,
+    checked: number[],
+    handleToggle: Function,
+    handleDelete: (value: number) => void,
+}
+const MListItem = (props: MListItemProps) => {
     // popup list title , edit button current chapter, time ago seen, delete button
     const timeAgo = '1 day ago'
     // const [props.editing, setEditing] = useState(true)
-    const [title, setTitle] = useState(capitalizeTitle(props.value.title))
+    const title = capitalizeTitle(props.data.title)
     const [tempValue, setTempValue] = useState(title);
-    const handleSubmit = (event: any) => {
-        event.preventDefault()
-        setTitle(tempValue)
-        props.resetState()
+    const [url, setUrl] = useState('');
+    const [latestUrl, setLatestUrl] = useState('');
+    const [currentSource, setCurrentSource] = useState('any');
+    const getLatestLink = () => {
+        chrome.storage.sync.get('manga-list', (res) => {
+            const mangaList = res['manga-list']
+            mangaList.forEach((res: Manga) => {
+                if (res.title === props.data.title) {
+                    const link = res.sources[currentSource].latest_link
+                    setLatestUrl(link)
+                    setUrl(res.sources[currentSource].url)
+                }
+            }
+            )
+        })
     }
+    console.log(latestUrl)
+    useEffect(() => {
+        if (props.data.current_source) {
+            console.log('in')
+            setCurrentSource(props.data.current_source)
+        }
+    }, [])
+    useEffect(() => {
+        getLatestLink()
+    }, [currentSource])
+    // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
+    const updateUrl = (key: string) => {
+        console.log(props.data.sources, 'k', key, props.data.sources[key])
+        setUrl(props.data.sources[key].url)
+        setCurrentSource(key || 'any')
+        setLatestUrl(props.data.sources[key].latest_link)
+        chrome.storage.sync.get('manga-list', (res) => {
+            try {
+                res['manga-list'].forEach((element: Manga) => {
+                    if (element.title === props.data.title) {
+                        element.current_source = key
+                    }
+                })
+                chrome.storage.sync.set({ 'manga-list': res['manga-list'] }, () => {
+                    console.log('updated')
+                })
+            } catch (e) {
+                console.log(e, 'set current source')
+            }
+        }
+        )
+    }
+    let edit = false
 
-    let edit = props.checked.length === 1 && props.checked[0] === props.idx && props.editing
-    const url = props.value.link || `https://www.asurascans.com/return-of-the-disaster-class-hero-chapter-1-1/`
+    // console.log('mlist current source', currentSource)
     return (
         <Grid className="list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'divider' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
             <ListItem
@@ -54,38 +105,25 @@ const MListItem = (props: any) => {
                     }
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
-                    {!edit ? (
-                        <a href={url} onClick={() => props.handleDelete()} rel='noreferrer' target='_blank'>
+                        <a href={url} rel='noreferrer' target='_blank'>
                             <p className="series-title">{title}</p>
                         </a>
-                    ) : (
-                        <form onSubmit={handleSubmit}>
-                            <input
-                                className="series-title"
-                                onChange={
-                                    (e) => {
-                                        setTempValue(e.target.value);
-                                        e.target.style.width = e.target.value.length + 1 + "ch";
-                                    }}
-                                value={tempValue}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Escape") {
-                                        // reset();
-                                    }
-                                }}
-                                style={{ width: props.value.title.length - 1 + "ch" }}
-                            >
-                            </input>
-                        </form>
-                    )}
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
-                    <p className='list-item-text' id='chapter-text' >{props.value['chapter']}/{props.value['latest'] || 100} </p>
+                    <p className='list-item-text' id='chapter-text' >
+                        <a href={url} rel='noreferrer' target='_blank'>
+                            {props.data['chapter']}
+                        </a>
+                        /
+                        <a href={latestUrl} rel='noreferrer' target='_blank'>
+                            {props.data['latest'] || 100}
+                        </a>
+                    </p>
                     <p className="text-small">{timeAgo}</p>
                 </Grid>
                 <Grid item xs={3} sm={3} md={3}>
-                    <OptionsMenu sources={props.value['scansite']} {...props} />
-                    {/* <p className='list-item-text' >{props.value['scansite']} </p> */}
+                    <OptionsMenu currentSource={currentSource} sources={props.data.sources} updateUrl={updateUrl} />
+                    {/* <p className='list-item-text' >{props.data['scansite']} </p> */}
                 </Grid>
             </ListItem>
             <Divider variant='middle' />
