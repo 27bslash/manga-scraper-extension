@@ -3,28 +3,48 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Manga from './../../types/manga';
 
-export default function OptionsMenu(props: any) {
-    const [source, setSource] = useState('');
+
+interface OptionsMenuProps {
+    sources: { [key: string]: { url: string, latest: string } },
+    currentSource: string,
+    updateUrl: (key: string) => void,
+}
+export default function OptionsMenu(props: OptionsMenuProps) {
+    const [source, setSource] = useState(props.currentSource);
 
     const handleChange = (event: SelectChangeEvent) => {
+        console.log(event.target.value)
         setSource(event.target.value as string);
+        props.updateUrl(event.target.value as string)
     };
+    // console.log(props.sources, Object.keys(props.sources))
+    Object.keys(props.sources).map((key: string, idx: number) => {
+        return true
+    })
+    const updateSource = (source: string) => {
 
+    }
+    // console.log('options current source', source)
     return (
-        <Box sx={{ minWidth: 120 }}>
-            <FormControl fullWidth>
-                <InputLabel id="demo-simple-select-label">Age</InputLabel>
+        <Box>
+            <FormControl variant='standard'>
                 <Select
+                    disableUnderline
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
                     value={source}
+                    label="Source"
                     onChange={handleChange}
                 >
-                    <MenuItem value={10}>Ten</MenuItem>
-                    <MenuItem value={20}>Twenty</MenuItem>
-                    <MenuItem value={30}>Thirty</MenuItem>
+                    {Object.keys(props.sources).map((key: string, idx: number) => {
+                        return (
+                            <MenuItem key={idx} value={key}>{key}</MenuItem>
+                        )
+                    })}
+
                 </Select>
             </FormControl>
         </Box>
