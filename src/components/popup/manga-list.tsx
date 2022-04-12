@@ -88,7 +88,7 @@
 import { useState, useEffect } from 'react';
 import List from '@mui/material/List';
 import BasicTabs from './list-top';
-import { Container } from '@mui/material';
+import { Container, SliderValueLabel } from '@mui/material';
 import Manga from './../../types/manga';
 import MListItem from './manga-list-item';
 
@@ -98,14 +98,15 @@ export default function CheckboxList() {
     const [showAll, setShowAll] = useState(false);
     const [data, setData] = useState<Manga[]>([])
     const [editing, setEditing] = useState(Boolean)
+    const [refresh, setRefresh] = useState(false)
     useEffect(() => {
         updateData()
-    }, [showAll])
-    // const [data, setData] = useState(testData)
+    }, [showAll, refresh])
+    // const [data, setData] = useState(testData)j
     const handleToggle = (value: number) => () => {
+        // console.log(value)
         const currentIndex = checked.indexOf(value);
         const newChecked = [...checked];
-
         if (currentIndex === -1) {
             newChecked.push(value);
         } else {
@@ -129,8 +130,9 @@ export default function CheckboxList() {
         })
         setData(newData);
         setChecked([]);
+        // chrome.storage.sync.set({ 'manga-list': newData })
     };
-    const updateDatabase = (type: string, data:  string) => {
+    const updateDatabase = (type: string, data: string) => {
         chrome.runtime.sendMessage({ type: type, data: data }, (response) => {
             console.log(`${type} entry`, response)
         })
@@ -152,10 +154,17 @@ export default function CheckboxList() {
     const updateData = () => {
         chrome.storage.sync.get('manga-list', (res) => {
             const mangaList = res['manga-list']
-            if (!showAll) {
-                setData(mangaList.filter((x: Manga) => !x.read))
-            } else {
-                setData(mangaList)
+            console.log('manga list', mangaList)
+            try {
+                if (mangaList) {
+                    if (!showAll) {
+                        setData(mangaList.filter((x: Manga) => !x.read))
+                    } else {
+                        setData(mangaList)
+                    }
+                }
+            } catch (error) {
+                console.log('data ', error)
             }
         })
     }
@@ -166,7 +175,7 @@ export default function CheckboxList() {
                 {data.map((value, key: number) => {
                     // const labelId = `checkbox-list-label-${key}`;
                     return (
-                        <MListItem value={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
+                        <MListItem data={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
                     );
                 })}
                 <p>{checked}{'' + showAll}</p>
