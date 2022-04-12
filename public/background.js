@@ -2,6 +2,7 @@
 chrome.runtime.onInstalled.addListener((details) => {
   //   setStorageKey("user", "test");
   // generate unique id:
+  chrome.alarms.create("refresh", { periodInMinutes: 1 });
   if (details.reason === "install") {
     console.log("This is a first install!");
     new Date();
@@ -42,7 +43,6 @@ const as = async () => {
 const get_user = async () => {
   const p = new Promise((resolve, reject) => {
     chrome.storage.sync.get("id", (result) => {
-      console.log("res", result);
       resolve(result.id);
     });
   });
@@ -105,9 +105,12 @@ class Background {
     // this.registerMessengerRequests();
 
     // 2. Listen for messages from background and run the listener from the map
-    setInterval(() => {
+    // create alarm after extension is installed / upgraded
+    updateStorage();
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      console.log(alarm.name); // refresh
       updateStorage();
-    }, 10000);
+    });
     // console.log("inittt");
     // setInterval(() => {
     //   chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
@@ -122,9 +125,11 @@ class Background {
     ) {
       if (request.type === "update") {
         console.log("update message received", this);
-        const response = postData("update", request.data);
-        updateStorage();
-        sendResponse({ update: response, data: request.data });
+        const response = postData("update", request.data).then((res) => {
+          console.log("response", res);
+          sendResponse(res);
+        });
+        // sendResponse({ update: response });
       } else if (request.type === "delete") {
         console.log("delete message received", this);
         const response = postData("delete", request.data);
@@ -162,6 +167,6 @@ const postData = async (method, data) => {
     body: JSON.stringify(data),
   });
   console.log("response", response);
-  return response;
+  return response.status;
 };
 new Background().init();
