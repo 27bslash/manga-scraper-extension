@@ -22,7 +22,7 @@ const Overlay = () => {
     }, key: string, chapter: string) => {
         if (source[key]) {
             if ('latest' in source[key]) {
-                return { 'url': data['link'], 'latest': source[key].latest, 'latest_link': source[key].latest_link }
+                return { 'url': data['link'], 'latest': source[key].latest, 'latest_link': source[key].latest_link || data['link'] }
             }
         }
         return { 'url': data['link'], 'latest': chapter, 'latest_link': data['link'] }
@@ -42,8 +42,9 @@ const Overlay = () => {
                         }
                         x['sources'][data['scansite']] = getLatest(x['sources'], data['scansite'], data['chapter'])
                         x['sources']['any'] = x['sources'][data['scansite']]
+                        x['read'] = x['chapter'] === x['latest']
                         console.log('updated series info:', x)
-                        addNewManga(x, updatePrompt)
+                        updateManga(x, updatePrompt)
                     }
                 }
             })
@@ -65,19 +66,28 @@ const Overlay = () => {
     )
 }
 const addNewManga = (data: any, updatePrompt: Function) => {
+    chrome.runtime.sendMessage({
+        type: 'insert', data: data
+    }, (response) => {
+        console.log('response', response)
+    }
+    )
+    updatePrompt(false)
+}
+const updateManga = (data: any, updatePrompt: Function) => {
     // console.log(url)
-    chrome.runtime.sendMessage({ type: 'update', data: data }, (response) => {
-        console.log('add new', response)
-
-    })
     chrome.storage.sync.get('manga-list', (result) => {
-        const list = result['manga-list']
-        list.forEach((element: Manga) => {
-            if (element.title === data.title) {
-                element = data
+        let list = result['manga-list']
+        for (let i = 0; i < list.length; i++) {
+            if (list[i]['title'] === data['title']) {
+                list[i] = data
+                break
             }
-        });
+        }
         chrome.storage.sync.set({ 'manga-list': list })
+        chrome.runtime.sendMessage({ type: 'update', data: list }, (response) => {
+            console.log('update', response)
+        })
     })
     updatePrompt(false)
 }
