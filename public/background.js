@@ -99,7 +99,18 @@ class Background {
       return null;
     }
   }
-
+  updateBadgeText() {
+    chrome.storage.sync.get("manga-list", (result) => {
+      console.log("result", result);
+      let badgeText = result["manga-list"]
+        .filter((x) => !x.read)
+        .length.toString();
+      if (badgeText === "0") {
+        badgeText = "";
+      }
+      chrome.action.setBadgeText({ text: badgeText });
+    });
+  }
   init() {
     // 1. Create a mapping for message listeners
     // this.registerMessengerRequests();
@@ -107,9 +118,11 @@ class Background {
     // 2. Listen for messages from background and run the listener from the map
     // create alarm after extension is installed / upgraded
     updateStorage();
+    this.updateBadgeText();
     chrome.alarms.onAlarm.addListener((alarm) => {
       console.log(alarm.name); // refresh
       updateStorage();
+      this.updateBadgeText();
     });
     // console.log("inittt");
     // setInterval(() => {
@@ -123,19 +136,30 @@ class Background {
       sender,
       sendResponse
     ) {
-      if (request.type === "update") {
-        console.log("update message received", this);
-        const response = postData("update", request.data).then((res) => {
-          console.log("response", res);
-          sendResponse(res);
-        });
-        // sendResponse({ update: response });
-      } else if (request.type === "delete") {
-        console.log("delete message received", this);
-        const response = postData("delete", request.data);
-        updateStorage();
-        sendResponse({ delete: response, data: request.data });
-      }
+      const response = postData(request.type, request.data);
+      console.log("response", response);
+      const type = request.type;
+      updateStorage();
+      sendResponse({ [type]: response, data: request.data });
+
+      //   if (request.type === "update") {
+      //     console.log("update message received");
+      //     const response = postData("update", request.data).then((res) => {
+      //       console.log("response", res);
+      //       sendResponse(res);
+      //     });
+      //     // sendResponse({ update: response });
+      //   } else if (request.type === "delete") {
+      //     console.log("delete message received");
+      //     const response = postData("delete", request.data);
+      //     updateStorage();
+      //     sendResponse({ delete: response, data: request.data });
+      //   } else {
+      //     console.log("delete message received");
+      //     const response = postData("insert", request.data);
+      //     updateStorage();
+      //     sendResponse({ insert: response, data: request.data });
+      //   }
     });
   }
 }
