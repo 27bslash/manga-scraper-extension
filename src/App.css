@@ -40,10 +40,17 @@
 }
 p {
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .Popup {
   text-align: center;
   width: 440px;
+  max-height: 300px;
+  overflow: hidden;
+}
+body {
+  margin: 0;
 }
 .manga-list-popup {
   /* background-color: rgb(231, 230, 230); */
@@ -64,9 +71,7 @@ p {
 .list-item {
   display: flex;
 }
-.highlight {
-  background-color: rgba(51, 54, 185, 0.452);
-}
+
 .options-menu {
   /* position: fixed;
     top: 0;
@@ -102,7 +107,7 @@ a:hover {
 }
 /* '#a7bbd457' */
 .list-item:hover {
-  background-color: rgb(198, 198, 207);
+  /* background-color: rgb(198, 198, 207); */
 }
 .list-item {
   position: relative;
@@ -126,5 +131,10 @@ a:hover {
 }
 .text-small {
   font-size: 11px;
-  color: rgb(75, 75, 75)
+  color: rgb(75, 75, 75);
+}
+#demo-simple-select {
+  font-size: 14px;
+  border: none;
+  text-transform: uppercase;
 }
