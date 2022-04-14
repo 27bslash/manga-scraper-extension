@@ -2,7 +2,15 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import * as React from 'react';
 
-export default function TabToggler(props: any) {
+interface TabtogglerProps {
+    showAll: boolean,
+    handleClick: (b: boolean, s: string) => void,
+    checked: number[],
+    handleDelete: (value?: number) => void,
+    updateEditing: (value: boolean) => void,
+    updateRead: (b: boolean) => void,
+}
+function TabToggler(props: TabtogglerProps) {
     const [value, setValue] = React.useState(0);
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -19,26 +27,25 @@ export default function TabToggler(props: any) {
                     <Tab label="All series" onClick={() => props.handleClick(true, 'toggleView')} />
                 </Tabs>
             )}
-            {props.checked.length === 1 && (
+            {props.checked.length > 0 && props.showAll && (
                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" TabIndicatorProps={{
                     style: {
-                        background: "red",
+                        display: 'none',
                     },
                 }} >
-
-                    <Tab className='align-right' label="Edit" onClick={props.handleClick('edit')} />
-                    <Tab label="Delete" onClick={props.handleDelete()} />
+                    <Tab label="Delete" onClick={() => props.handleDelete()} />
+                    <Tab className='align-right' label="un-read" onClick={() => props.updateRead(false)} />
                 </Tabs>
 
             )
             }
-            {props.checked.length > 1 && (
+            {props.checked.length > 0 && !props.showAll && (
                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" TabIndicatorProps={{
                     style: {
-                        background: "red",
+                        display: 'none',
                     },
                 }} >
-                    <Tab className='align-right' label="Delete" onClick={props.handleDelete()} />
+                    <Tab className='align-right' label="read" onClick={() => props.updateRead(true)} />
                 </Tabs>
 
             )
@@ -46,3 +53,4 @@ export default function TabToggler(props: any) {
         </>
     )
 }
+export default TabToggler;

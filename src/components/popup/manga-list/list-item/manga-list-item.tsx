@@ -7,7 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import { Grid } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import OptionsMenu from "./options-menu";
-import Manga from './../../types/manga';
+import Manga from '../../../../types/manga';
 
 interface MListItemProps {
     data: Manga
@@ -39,7 +39,6 @@ const MListItem = (props: MListItemProps) => {
             )
         })
     }
-    console.log(latestUrl)
     useEffect(() => {
         if (props.data.current_source) {
             console.log('in')
@@ -77,7 +76,7 @@ const MListItem = (props: MListItemProps) => {
     return (
         <Grid className="list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'divider' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
             <ListItem
-
+                disableGutters
                 secondaryAction={
                     <IconButton edge="end" aria-label="comments">
                     </IconButton>
@@ -86,28 +85,36 @@ const MListItem = (props: MListItemProps) => {
 
             >
                 <Grid item xs={2} sm={2} md={2}>
-                    {props.showAll &&
-                        <ListItemButton role={undefined} onClick={props.handleToggle(props.idx)} dense>
-                            <ListItemIcon>
-                                <Checkbox
-                                    edge="end"
-                                    checked={props.checked.indexOf(props.idx) !== -1}
-                                    tabIndex={-1}
-                                    disableRipple={true}
-                                    // inputProps={{ 'aria-labelledby': labelId }}
-                                    sx={{
-                                        width: 20,
-                                        padding: 0
-                                    }}
-                                />
-                            </ListItemIcon>
-                        </ListItemButton>
-                    }
+                    <ListItemButton role={undefined} onClick={props.handleToggle(props.idx)}
+                        sx={{
+                            ml: 1,
+                            "&.MuiListItemButton-root:hover": {
+                                bgcolor: "transparent"
+                            },
+                            bgColor: props.checked.includes(props.idx) ? "primary.light" : "transparent"
+                        }}
+                        disableRipple
+                        dense>
+                        <ListItemIcon>
+                            <Checkbox
+                                edge="end"
+                                checked={props.checked.indexOf(props.idx) !== -1}
+                                tabIndex={-1}
+                                disableRipple={true}
+                                // inputProps={{ 'aria-labelledby': labelId }}
+                                sx={{
+                                    width: 20,
+                                    padding: 0
+                                }}
+                            />
+                        </ListItemIcon>
+                    </ListItemButton>
+
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
-                        <a href={url} rel='noreferrer' target='_blank'>
-                            <p className="series-title">{title}</p>
-                        </a>
+                    <a href={url} rel='noreferrer' target='_blank'>
+                        <p className="series-title">{title}</p>
+                    </a>
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
                     <p className='list-item-text' id='chapter-text' >
@@ -129,46 +136,6 @@ const MListItem = (props: MListItemProps) => {
             <Divider variant='middle' />
         </Grid >
     )
-    // return (
-    //     <div className='list-item'>
-    //         <form onSubmit={(e) => handleSubmit(e)}>
-    //             <div className='chapter-details'>
-    //                 {!edit ? (
-    //                     <a href={url} onClick={() => updatePopup(props.updateList, props.index)} rel='noreferrer' target='_blank'>
-    //                         <p className="chapter-title">{title}idx: {props.index}</p>
-    //                     </a>
-    //                 ) : (
-    //                     <input
-    //                         className="series-title"
-    //                         onChange={
-    //                             (e) => {
-    //                                 setTempValue(e.target.value);
-    //                                 e.target.style.width = e.target.value.length + 1 + "ch";
-    //                             }}
-    //                         value={tempValue}
-    //                         onKeyDown={(e) => {
-    //                             if (e.key === "Escape") {
-    //                                 // reset();
-    //                             }
-    //                         }}
-    //                         style={{ width: props.data.title.length - 1 + "ch" }}
-    //                     >
-    //                     </input>)}
-    //                 {/* <i
-    //                     className="far fa-edit"
-    //                     onClick={(e) => {
-    //                         //   console.log(e);
-    //                         // reset();
-    //                     }}
-    //                 >edit</i> */}
-    //                 <p className="series-chapter">{props.data.chapter}index : {props.index}</p>
-    //                 <p className="timeago" >{timeAgo}</p>
-    //                 <p className="scanSite" >{props.data.scansite}</p>
-    //             </div>
-    //         </form>
-    //         {/* <button onClick={() => deleteEntry(props.updateList, props.index)}>delete</button> */}
-    //     </div >
-    // )
 }
 const updatePopup = (updateList: Function, idx: number) => {
     console.log('clikced')

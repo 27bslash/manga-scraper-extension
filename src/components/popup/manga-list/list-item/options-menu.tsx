@@ -4,7 +4,6 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { useState, useEffect } from 'react';
-import Manga from './../../types/manga';
 
 
 interface OptionsMenuProps {
