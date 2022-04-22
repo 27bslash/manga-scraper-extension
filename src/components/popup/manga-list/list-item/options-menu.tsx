@@ -19,13 +19,6 @@ export default function OptionsMenu(props: OptionsMenuProps) {
         setSource(event.target.value as string);
         props.updateUrl(event.target.value as string)
     };
-    // console.log(props.sources, Object.keys(props.sources))
-    Object.keys(props.sources).map((key: string, idx: number) => {
-        return true
-    })
-    const updateSource = (source: string) => {
-
-    }
     // console.log('options current source', source)
     return (
         <Box>
