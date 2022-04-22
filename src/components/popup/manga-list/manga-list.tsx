@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import List from '@mui/material/List';
 import BasicTabs from '../nav/list-top';
-import { Box as container, Container } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import Manga from '../../../types/manga';
 import MListItem from './list-item/manga-list-item';
 import Search from '../../search/search';
@@ -13,7 +13,17 @@ export default function CheckboxList() {
     const [checked, setChecked] = useState<number[]>([]);
     const [showAll, setShowAll] = useState(false);
     const [data, setData] = useState<Manga[]>([])
+    const [totalData, setTotalData] = useState<Manga[]>([])
     const [refresh, setRefresh] = useState(false)
+    useEffect(() => {
+        chrome.storage.local.get('manga-list', (res) => {
+            setTotalData(res['manga-list'])
+            const filteredData = res['manga-list'].filter((x: Manga) => !x.read)
+            if (filteredData.length === 0) {
+                setShowAll(true)
+            }
+        })
+    }, [])
     useEffect(() => {
         updateData()
     }, [showAll, refresh])
@@ -25,6 +35,9 @@ export default function CheckboxList() {
             setChecked([])
         }
     }
+    chrome.storage.onChanged.addListener(() => {
+        setRefresh(!refresh)
+    })
     const handleToggle = (value: number) => () => {
         // console.log(value)
 
@@ -38,9 +51,9 @@ export default function CheckboxList() {
 
         setChecked(newChecked);
     };
-    const handleDelete = (value = -1) => () => {
+    const handleDelete = (value = -1) => {
         const newData = [...data];
-        console.log(value)
+        console.log('del', value)
         if (value !== -1) {
             const spliced = newData.splice(value, 1)
             setData(newData)
@@ -51,14 +64,15 @@ export default function CheckboxList() {
             newData.splice(x, 1)
             console.log(x, newData)
         })
-        setData(newData);
-        setChecked([]);
-        // chrome.storage.sync.set({ 'manga-list': newData })
+        updateDatabase('update', newData)
+        chrome.storage.local.set({ 'manga-list': newData })
+        setRefresh(!refresh)
+        // chrome.storage.local.set({ 'manga-list': newData })
     };
     const updateRead = (b: boolean) => {
         console.log('update read', b)
         const newData = [...data];
-        chrome.storage.sync.get('manga-list', (res) => {
+        chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             mangaList.forEach((manga: Manga, i: number) => {
                 checked.forEach(check => {
@@ -76,36 +90,15 @@ export default function CheckboxList() {
                 })
             })
             updateDatabase('update', mangaList)
-            chrome.storage.sync.set({ 'manga-list': mangaList })
+            chrome.storage.local.set({ 'manga-list': mangaList })
             setRefresh(!refresh)
-
-            // checked.sort((a, b) => b - a).forEach(x => {
-            //     if (b) {
-            //         newData[x].read = true
-            //         newData[x].chapter = newData[x].latest
-            //     } else {
-            //         newData[x].read = false
-            //         newData[x].chapter = '1'
-            //     }
-            // })
-
-            // if (showAll) {
-            //     setData(newData);
-            //     setChecked([]);
-            //     return
-            // } else {
-            //     setData(newData.filter(x => !x.read))
-            //     setChecked([]);
-            //     return
-            // }
-            // chrome.storage.sync.set({ 'manga-list': newData })
         })
 
 
     }
-    const updateDatabase = (type: string, data: Manga) => {
+    const updateDatabase = (type: string, data: Manga[]) => {
         chrome.runtime.sendMessage({ type: type, data: data }, (response) => {
-            console.log(`${type} entry read`, response)
+            console.log(`${type} entry`, response)
         })
     }
     const handleClick = (b = true, type: string) => {
@@ -120,9 +113,19 @@ export default function CheckboxList() {
     }
 
     const updateData = () => {
-        chrome.storage.sync.get('manga-list', (res) => {
-            const mangaList = res['manga-list']
-            console.log('manga list', mangaList)
+        chrome.storage.local.get('manga-list', (res) => {
+            const mangaList = res['manga-list'].sort((a: Manga, b: Manga) => {
+                let currentSourceA = 'any'
+                let currentSourceB = 'any'
+                if ('current_source' in a) {
+                    currentSourceA = a.current_source
+                }
+                if ('current_source' in b) {
+                    currentSourceB = b.current_source
+                }
+                return b['sources'][currentSourceB]['time_updated'] - a['sources'][currentSourceA]['time_updated']
+            })
+            console.log(mangaList)
             try {
                 if (mangaList) {
                     if (!showAll) {
@@ -135,24 +138,29 @@ export default function CheckboxList() {
                 console.log('data ', error)
             }
         })
+        setChecked([])
     }
     const filterData = (x: Manga[]) => {
         setData(x)
     }
+    // rgb(30 41 101) top bg
+    // bot bg rgb(55 65 127)
+    // divider rgb(119, 119, 203)
     return (
-        <Container sx={{ padding: 0, maxWidth:'440px' }}>
-            <BasicTabs updateRead={updateRead} showAll={showAll} checked={checked} handleDelete={handleDelete} handleClick={handleClick} />
-            <div style={{ display: 'flex' }}>
+        <Container sx={{ maxWidth: '440px', padding: 0 }}>
+            {JSON.stringify(showAll)}
+            <BasicTabs updateRead={updateRead} showAll={showAll} checked={checked} handleDelete={handleDelete} handleClick={handleClick} totalData={totalData} />
+            <Container className='terstcont' sx={{ display: 'flex', backgroundColor: 'rgb(55, 65 ,127)' }}>
                 <MasterBox toggleAll={toggleAll} />
-                <Search data={data} filterData={filterData} />
-            </div>
-            <List sx={{ width: '100%', bgcolor: 'background.dark', }}>
+                <Search data={data} filterData={filterData} showAll={showAll} />
+            </Container>
+            <List dense sx={{ width: '100%', padding: 0 }}>
                 {data.map((value, key: number) => {
                     return (
                         <MListItem data={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
                     );
                 })}
             </List >
-        </Container>
+        </Container >
     );
 }
