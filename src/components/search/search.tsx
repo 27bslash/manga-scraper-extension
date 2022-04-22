@@ -15,25 +15,63 @@ const Search = (props: any) => {
     //     });
     //     setData(filteredRows);
     // };
-    useEffect(() => {
-        chrome.storage.sync.get('manga-list', (res) => {
+    const initData = () => {
+        chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
-            setM(mangaList)
+            if (props.showAll) {
+                setM(mangaList)
+            }
+            else {
+                setM(m.filter((x: Manga) => !x.read))
+            }
         })
-    }, [])
-    const sorted = matchSorter(m.map((x: Manga) => {
-        x.title = x.title.replace(/-/g, ' ')
-        return x
-    }), value, { keys: ['title'] })
+        setValue('')
+    }
+    useEffect(() => {
+        initData()
+    }, []);
+    useEffect(() => {
+        initData()
+    }, [props.showAll])
     useEffect(() => {
         props.filterData(sorted)
     }, [value])
+    const sorted = matchSorter(m.map((x: Manga) => {
+        x.title = x.title.replace(/-/g, ' ')
+        return x
+
+    }), value, { keys: ['title'] })
+
     return (
         <div className="search-container" style={{
             marginRight: 0,
             marginLeft: 'auto',
+            padding: '5px'
         }}>
-            <TextField id="standard-basic" label="" variant="standard" onChange={(e) => setValue(e.target.value)} />
+            <TextField
+                sx={{
+                    width: '80%', height: '80%', input: {
+                        color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px', borderRadius: '5px',
+                        "&::before": {
+                            display: 'none',
+                            border: 'none'
+                        },
+                        '&::after': {
+                            border: 'none',
+                            display: 'none'
+                        }
+                    },
+                    "& .MuiInput-underline:after": {
+                        display: 'none'
+                    }
+                }}
+                
+                color="primary"
+                id="standard-basic"
+                placeholder='Search...'
+                label=""
+                variant="standard"
+                onChange={(e) => setValue(e.target.value)} />
         </div >
     )
 }
