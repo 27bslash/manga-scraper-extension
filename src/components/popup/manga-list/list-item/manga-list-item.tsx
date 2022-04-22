@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react"
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import Checkbox from '@mui/material/Checkbox';
-import IconButton from '@mui/material/IconButton';
-import { Grid } from '@mui/material';
-import Divider from '@mui/material/Divider';
+import { Grid, Checkbox, IconButton, ListItem, ListItemButton, ListItemIcon, Divider } from '@mui/material';
 import OptionsMenu from "./options-menu";
 import Manga from '../../../../types/manga';
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en.json'
+TimeAgo.addDefaultLocale(en)
 
 interface MListItemProps {
     data: Manga
@@ -19,15 +16,13 @@ interface MListItemProps {
 }
 const MListItem = (props: MListItemProps) => {
     // popup list title , edit button current chapter, time ago seen, delete button
-    const timeAgo = '1 day ago'
     // const [props.editing, setEditing] = useState(true)
     const title = capitalizeTitle(props.data.title)
-    const [tempValue, setTempValue] = useState(title);
     const [url, setUrl] = useState('');
     const [latestUrl, setLatestUrl] = useState('');
-    const [currentSource, setCurrentSource] = useState('any');
+    const [currentSource, setCurrentSource] = useState(props.data.current_source);
     const getLatestLink = () => {
-        chrome.storage.sync.get('manga-list', (res) => {
+        chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             mangaList.forEach((res: Manga) => {
                 if (res.title === props.data.title) {
@@ -41,40 +36,50 @@ const MListItem = (props: MListItemProps) => {
     }
     useEffect(() => {
         if (props.data.current_source) {
-            console.log('in')
             setCurrentSource(props.data.current_source)
+            // console.log('in', props.data, '\n', currentSource, props.data.current_source)
         }
     }, [])
     useEffect(() => {
         getLatestLink()
-    }, [currentSource])
+    }, [title])
     // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
+    const timeAgo = new TimeAgo('en-US')
+    const currentTime = new Date().getTime() / 1000
+    let timeago: any = '0'
+    try {
+        const timeDelta = currentTime - props.data['sources'][props.data.current_source].time_updated
+        timeago = timeAgo.format(Date.now() - timeDelta * 1000)
+    } catch {
+        console.log('%c error', 'color: red', props.data, currentSource)
+    }
+
     const updateUrl = (key: string) => {
         console.log(props.data.sources, 'k', key, props.data.sources[key])
         setUrl(props.data.sources[key].url)
         setCurrentSource(key || 'any')
         setLatestUrl(props.data.sources[key].latest_link)
-        chrome.storage.sync.get('manga-list', (res) => {
+        chrome.storage.local.get('manga-list', (res) => {
             try {
                 res['manga-list'].forEach((element: Manga) => {
                     if (element.title === props.data.title) {
                         element.current_source = key
                     }
                 })
-                chrome.storage.sync.set({ 'manga-list': res['manga-list'] }, () => {
+                chrome.storage.local.set({ 'manga-list': res['manga-list'] }, () => {
                     console.log('updated')
                 })
+                chrome.runtime.sendMessage({ type: 'update', data: res['manga-list'] })
             } catch (e) {
                 console.log(e, 'set current source')
             }
         }
         )
     }
-    let edit = false
 
     // console.log('mlist current source', currentSource)
     return (
-        <Grid className="list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'divider' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
+        <Grid className="manga-updater-list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'primary.main' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
             <ListItem
                 disableGutters
                 secondaryAction={
@@ -113,7 +118,7 @@ const MListItem = (props: MListItemProps) => {
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
                     <a href={url} rel='noreferrer' target='_blank'>
-                        <p className="series-title">{title}</p>
+                        <p className="series-title">{capitalizeTitle(title)}</p>
                     </a>
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
@@ -126,27 +131,40 @@ const MListItem = (props: MListItemProps) => {
                             {props.data['latest'] || 100}
                         </a>
                     </p>
-                    <p className="text-small">{timeAgo}</p>
+                    <p className="text-small">{timeago}</p>
                 </Grid>
                 <Grid item xs={3} sm={3} md={3}>
                     <OptionsMenu currentSource={currentSource} sources={props.data.sources} updateUrl={updateUrl} />
-                    {/* <p className='list-item-text' >{props.data['scansite']} </p> */}
                 </Grid>
             </ListItem>
-            <Divider variant='middle' />
+            <Divider light />
         </Grid >
     )
 }
-const updatePopup = (updateList: Function, idx: number) => {
-    console.log('clikced')
-    updateList(idx)
-}
+
 const capitalizeTitle = (title: string) => {
     // capitalize first letter of each word
-    return title.split('-').map(word => {
-        return word !== 'of' && word !== 'a' ? word.charAt(0).toUpperCase() + word.slice(1) : word
+    let split = ' '
+    if (title.includes('-')) {
+        split = '-'
     }
-    ).join(' ')
-}
+    return title.split(split).map((word: string, i: number) => {
+        if (i === 0 && !(/^(.)\1+$/.test(word))) {
+            return word.charAt(0).toUpperCase() + word.slice(1)
+        }
+        else if (/^(.)\1+$/.test(word)) {
+            // if word is all the same character
+            return word.toUpperCase()
+        }
+        else if (word !== 'of' && word !== 'a') {
+            return word.charAt(0).toUpperCase() + word.slice(1)
+        }
+        else {
+            return word
+        }
+    })
+        .join(' ')
+};
+
 
 export default MListItem
