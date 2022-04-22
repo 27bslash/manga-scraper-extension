@@ -47,7 +47,9 @@ p {
   text-align: center;
   width: 440px;
   max-height: 300px;
-  overflow: hidden;
+  overflow-y: scroll;
+  overflow-y: overlay;
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -61,14 +63,14 @@ body {
   background-color: rgb(14, 19, 29);
   color: grey;
 }
-.list-item-wrapper {
+.manga-updater-list-item-wrapper {
   display: flex;
   border-bottom: 1px solid gray;
   justify-content: space-between;
   align-items: center;
   padding: 3px;
 }
-.list-item {
+.manga-updater-list-item {
   display: flex;
 }
 
@@ -106,22 +108,22 @@ a:hover {
   color: rgb(133, 133, 202);
 }
 /* '#a7bbd457' */
-.list-item:hover {
+.manga-updater-list-item:hover {
   /* background-color: rgb(198, 198, 207); */
 }
-.list-item {
+.manga-updater-list-item {
   position: relative;
 }
-.list-item:after {
-  content: "";
+.manga-updater-list-item:after {
+  /* content: "";
   background: #c1c4c9;
   position: absolute;
   bottom: 0;
   left: 0;
   height: 50%;
-  width: 1px;
+  width: 1px; */
 }
-.list-item-text {
+.manga-updater-list-item-text {
   margin-right: 0px;
   font-size: 14px;
 }
