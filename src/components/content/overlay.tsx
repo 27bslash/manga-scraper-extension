@@ -1,35 +1,48 @@
-import { SetStateAction, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Manga from './../../types/manga';
-import { useEffect } from 'react';
+import { Button, IconButton, Snackbar, SnackbarContent } from "@mui/material"
+import CloseIcon from '@mui/icons-material/Close';
+
 interface Test {
     any: string
 }
 const Overlay = () => {
-    const data = extractTitle(document.title)
-    // listenForMessages();
-    // console.log('app')
+    const [data, setData] = useState<any>(extractTitle(document.title))
+    useEffect(() => {
+        if (!(/\d+/.test(document.title))) {
+            setTimeout(() => {
+                const titleData = extractTitle(document.title)
+                if (titleData.chapter) {
+                    setData(titleData)
+                }
+            }, 5000)
+
+        }
+    }, [data])
+    console.log(data, document.title)
     const [showPrompt, setShowPrompt] = useState(true)
-    const [id, setId] = useState('')
-    chrome.storage.sync.get("id", (result) => {
-        setId(result.id)
-    });
     const getLatest = (source: {
         [x: string]: {
             url: string;
             latest: string;
-            latest_link: string;
+            latest_link: string,
+            time_updated: number;
         };
     }, key: string, chapter: string) => {
+        let timeUpdated = Date.now() / 1000;
+        if ('time_updated' in source[key]) {
+            timeUpdated = source[key].time_updated
+        }
         if (source[key]) {
             if ('latest' in source[key]) {
-                return { 'url': data['link'], 'latest': source[key].latest, 'latest_link': source[key].latest_link || data['link'] }
+                return { 'url': data['link'], 'latest': source[key].latest, 'latest_link': source[key].latest_link || data['link'], time_updated: timeUpdated }
             }
         }
-        return { 'url': data['link'], 'latest': chapter, 'latest_link': data['link'] }
+        return { 'url': data['link'], 'latest': chapter, 'latest_link': data['link'], time_updated: timeUpdated }
     }
 
     useEffect(() => {
-        chrome.storage.sync.get('manga-list', (result) => {
+        chrome.storage.local.get('manga-list', (result) => {
             result['manga-list'].forEach((x: Manga) => {
                 if (x['title'] === data['title']) {
                     // update chapter
@@ -54,12 +67,57 @@ const Overlay = () => {
     const updatePrompt = (b: boolean) => {
         setShowPrompt(b)
     }
+    const [open, setOpen] = useState(true);
+
+    const handleClose = (event: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setOpen(false);
+    };
+    const vertical = 'top';
+    const horizontal = 'center';
+    const action = (
+        <>
+            <Button sx={{ minWidth: '0px', height: '30px', fontSize: '16px' }} color="secondary" size="small" onClick={() => addNewManga(data, updatePrompt)}>
+                OK
+            </Button>
+            <IconButton
+                size="small"
+                aria-label="close"
+                color="inherit"
+                onClick={handleClose}
+            >
+                <CloseIcon color='secondary' fontSize="small" />
+            </IconButton>
+        </>
+    );
     return (
         +data['chapter'] > 10 && showPrompt ? (
-            <div className='manga-overlay'>start reading ?
-                <p onClick={() => addNewManga(data, updatePrompt)}>ok</p>
-                <p onClick={() => setShowPrompt(false)} >cancel</p>
-            </div >
+            <div className="manga-overlay">
+                <Snackbar
+                    open={open}
+                    onClose={handleClose}
+                    anchorOrigin={{ vertical, horizontal }}
+                >
+                    <SnackbarContent
+                        message="Start Reading? "
+                        action={action}
+                        sx={{
+                            display: 'grid', minWidth: '100px !important', textAlign: 'center',
+                            ".MuiSnackbarContent-action": {
+                                paddingLeft: '0',
+                                width: '90%',
+                            }
+                        }}
+                    />
+                </Snackbar>
+            </div>
+            // <div className='manga-overlay'>start reading ?
+            //     <p onClick={() => addNewManga(data, updatePrompt)}>ok</p>
+            //     <p onClick={() => setShowPrompt(false)} >cancel</p>
+            // </div >
         ) : (
             <div></div>
         )
@@ -76,7 +134,7 @@ const addNewManga = (data: any, updatePrompt: Function) => {
 }
 const updateManga = (data: any, updatePrompt: Function) => {
     // console.log(url)
-    chrome.storage.sync.get('manga-list', (result) => {
+    chrome.storage.local.get('manga-list', (result) => {
         let list = result['manga-list']
         for (let i = 0; i < list.length; i++) {
             if (list[i]['title'] === data['title']) {
@@ -84,7 +142,7 @@ const updateManga = (data: any, updatePrompt: Function) => {
                 break
             }
         }
-        chrome.storage.sync.set({ 'manga-list': list })
+        chrome.storage.local.set({ 'manga-list': list })
         chrome.runtime.sendMessage({ type: 'update', data: list }, (response) => {
             console.log('update', response)
         })
@@ -94,16 +152,23 @@ const updateManga = (data: any, updatePrompt: Function) => {
 const extractTitle = (title: string) => {
     let chapterNum = "",
         scanSite = "";
-    const scanRegex = /\w+\s?\w+$/gim;
-    const chapterRegex = /(?<=episode\s|chapter\s|#)\d+\.?\d*/im;
+    const scanRegex = /\w+\s?-?\w+$/gim;
+    const chapterRegex = /(?<=episode\s|chapter\s|#|- )\d+\.?\d*/im;
+    const t = /(?=::|-|r)(.*?)(?=:: chapter| chapter)/gim
+    const r = /(?<= - ).*(?=-)/gim
     const cleanTitle = (title: string) => {
         let seriesTitle = title.replace(scanRegex, '').trim();
         seriesTitle = seriesTitle
             // remove chapter numbers
             .replace(chapterRegex, "")
             .replace(/chapter|episode/gi, "")
-            // remove special characters
-            .replace(/:|-|-|\||\[#\]/gm, "")
+        // remove special characters
+        const match = seriesTitle.match(/(?<= -|::).*(?=:: chapter| -)/gim)
+        if (match) {
+            seriesTitle = match[0]
+        }
+        seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "")
+            .replace(/[-–]+/g, ' ')
             .trim()
             .replace(/\s/g, '-')
             .toLowerCase()
@@ -116,7 +181,7 @@ const extractTitle = (title: string) => {
         } else {
             const match = title.match(scanRegex)
             if (match) {
-                scanSite = match[0].replace(' ', '').toLowerCase()
+                scanSite = match[0].replace(' ', '').replace('-', '').toLowerCase()
             }
         }
     };
@@ -134,17 +199,10 @@ const extractTitle = (title: string) => {
     scans(title);
     getChapterNum(title);
     const seriesTitle = cleanTitle(title);
-    return { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href, sources: [{ scanSite: window.location.href }] }
+    return { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href }
 };
 
-const listenForMessages = () => {
-    console.log('listen messga')
-    chrome.runtime.onMessage.addListener((message, sender) => {
-        const { type, data } = message;
-        return true
-        // return true;
-    });
-};
+
 export default Overlay
 
 
