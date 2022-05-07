@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import Manga from './../../types/manga';
-import { Button, IconButton, Snackbar, SnackbarContent } from "@mui/material"
+import { IconButton, Snackbar, SnackbarContent } from "@mui/material"
 import CloseIcon from '@mui/icons-material/Close';
+import DoneIcon from '@mui/icons-material/Done';
 
 interface Test {
     any: string
