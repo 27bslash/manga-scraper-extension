@@ -215,7 +215,7 @@ const extractTitle = (title: string) => {
         return seriesTitle
     }
     const scans = (title: string) => {
-        if (title.toLowerCase().includes("episode")) {
+        if (window.location.href.includes('webtoons')) {
             // webttons edge case
             scanSite = "webtoons";
         } else {
@@ -238,7 +238,20 @@ const extractTitle = (title: string) => {
     };
     scans(title);
     getChapterNum(title);
-    const seriesTitle = cleanTitle(title);
+    let seriesTitle = cleanTitle(title);
+    if (window.location.href.includes('webtoons')) {
+        const meta = document.head.querySelector('meta[name="keywords"]')
+        if (meta) {
+            const cont = meta.getAttribute('content')
+            if (cont) {
+                const split = cont.split(',')
+                seriesTitle = split[0].trim().replace(/\s/g, "-").toLowerCase()
+                chapterNum = split[1].trim()
+                scanSite = 'webtoons'
+            }
+
+        }
+    }
     return { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href }
 };
 
