@@ -2,6 +2,24 @@ import { useState } from 'react';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Checkbox from '@mui/material/Checkbox';
+import { ThemeProvider } from "@emotion/react";
+import { createTheme } from "@mui/material";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#3f51b5",
+        },
+        secondary: {
+            main: "#fff",
+        },
+        background: {
+            default: "#fff",
+            paper: "#fff",
+        }
+    },
+})
+
 const MasterBox = (props: any) => {
     const [checked, setChecked] = useState(false);
     const handleClick = () => {
@@ -9,27 +27,35 @@ const MasterBox = (props: any) => {
         setChecked(!checked);
     }
     return (
-        <div style={{
-            marginLeft: '8px'
-        }}>
-            <ListItemButton role={undefined} onClick={handleClick} disableRipple dense>
-                <ListItemIcon>
-                    <Checkbox
-                        edge="end"
-                        checked={checked}
-                        tabIndex={-1}
-                        disableRipple={true}
-                        sx={{
-                            width: 20,
-                            padding: 0,
-                            "& .MuiListItemButton-root:hover": {
-                                backgroundColor: "primary.light"
-                            }
-                        }}
-                    />
-                </ListItemIcon>
-            </ListItemButton>
-        </div >
+        <ThemeProvider
+            theme={theme}
+        >
+            <div style={{
+                display: 'flex', alignItems: 'center'
+            }}>
+                <ListItemButton role={undefined} onClick={handleClick} disableRipple dense sx={{ padding: 0 }}>
+                    <ListItemIcon>
+                        <Checkbox
+                            edge="end"
+                            checked={checked}
+                            tabIndex={-1}
+                            disableRipple={true}
+                            color='secondary'
+                            sx={{
+                                width: 20,
+                                padding: 0,
+                                ml: 1,
+                                "&.MuiListItemButton-root:hover": {
+                                    bgcolor: "transparent"
+                                },
+                                bgColor: '#fff'
+                            }}
+                        />
+                    </ListItemIcon>
+                </ListItemButton>
+                <p style={{ marginTop: '1px', marginLeft: '2px', color: '#fff' }}> Select All</p>
+            </div >
+        </ThemeProvider >
     )
 }
 export default MasterBox
