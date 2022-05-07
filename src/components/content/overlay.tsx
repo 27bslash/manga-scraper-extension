@@ -97,16 +97,20 @@ const Overlay = () => {
     const horizontal = 'center';
     const action = (
         <>
-            <Button sx={{ minWidth: '0px', height: '30px', fontSize: '16px' }} color="secondary" size="small" onClick={() => addNewManga(data, updatePrompt)}>
-                OK
-            </Button>
+            <IconButton
+                aria-label="open"
+                onClick={() => { addNewManga(data, updatePrompt) }}
+
+            >
+                <DoneIcon color='secondary' fontSize='medium' />
+            </IconButton>
             <IconButton
                 size="small"
                 aria-label="close"
                 color="inherit"
                 onClick={handleClose}
             >
-                <CloseIcon color='secondary' fontSize="small" />
+                <CloseIcon color='secondary' fontSize="medium" />
             </IconButton>
         </>
     );
@@ -140,7 +144,9 @@ const Overlay = () => {
                             display: 'grid', minWidth: '100px !important', textAlign: 'center',
                             ".MuiSnackbarContent-action": {
                                 paddingLeft: '0',
-                                width: '90%',
+                                display: 'block',
+                                marginLeft: '0',
+                                marginRight: '0',
                             }
                         }}
                     />
