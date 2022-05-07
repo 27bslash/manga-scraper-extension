@@ -68,12 +68,29 @@ const Overlay = () => {
         setShowPrompt(b)
     }
     const [open, setOpen] = useState(true);
-
+    const addToBlackList = (title: string) => {
+        console.log('add to black list: ', title)
+        chrome.storage.local.get('blacklist', (result) => {
+            if (!result['blacklist']) {
+                result['blacklist'] = []
+            }
+            const blacklist: [{ 'title': string, 'chapter': string }] = result['blacklist']
+            const filtered = blacklist.filter((x: any) =>
+                x['title'] === data['title']
+            );
+            if (filtered.length === 0) {
+                blacklist.push({ title: title, chapter: data['chapter'] })
+            }
+            chrome.storage.local.set({ 'blacklist': blacklist }, () => {
+                setOpen(false)
+            })
+        })
+    }
     const handleClose = (event: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === 'clickaway') {
             return;
         }
-
+        addToBlackList(data['title'])
         setOpen(false);
     };
     const vertical = 'top';
@@ -93,8 +110,23 @@ const Overlay = () => {
             </IconButton>
         </>
     );
+    const checkOpen = () => {
+        chrome.storage.local.get('blacklist', (result) => {
+            const blacklist = result['blacklist']
+            const filtered = blacklist.filter((x: any) => x['title'] === data['title'] && data['chapter'] - 5 <= +x['chapter']);
+            if (filtered && filtered.length > 0) {
+                setOpen(false)
+                return false
+            } else {
+                return true
+            }
+        }
+        )
+        return true
+    }
+
     return (
-        +data['chapter'] > 10 && showPrompt ? (
+        +data['chapter'] > 10 && showPrompt && checkOpen() ? (
             <div className="manga-overlay">
                 <Snackbar
                     open={open}
