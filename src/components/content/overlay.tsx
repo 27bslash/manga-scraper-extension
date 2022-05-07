@@ -202,7 +202,10 @@ const extractTitle = (title: string) => {
         // remove special characters
         const match = seriesTitle.match(/(?<= -|::).*(?=:: chapter| -)/gim)
         if (match) {
-            seriesTitle = match[0]
+            if (match[0].match(/\w/gim)) {
+                seriesTitle = match[0]
+            }
+            console.log('match', match[0])
         }
         seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "")
             .replace(/[-–]+/g, ' ')
