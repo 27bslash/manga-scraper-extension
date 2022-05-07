@@ -196,9 +196,7 @@ const extractTitle = (title: string) => {
     let chapterNum = "",
         scanSite = "";
     const scanRegex = /\w+\s?-?\w+$/gim;
-    const chapterRegex = /(?<=episode\s|chapter\s|#|- )\d+\.?\d*/im;
-    const t = /(?=::|-|r)(.*?)(?=:: chapter| chapter)/gim
-    const r = /(?<= - ).*(?=-)/gim
+    const chapterRegex = /(?<=episode\s|chapter\s|#|- |ep. )\d+\.?\d*/im;
     const cleanTitle = (title: string) => {
         let seriesTitle = title.replace(scanRegex, '').trim();
         seriesTitle = seriesTitle
@@ -213,8 +211,10 @@ const extractTitle = (title: string) => {
             }
             console.log('match', match[0])
         }
+        console.log(seriesTitle)
         seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "")
             .replace(/[-–]+/g, ' ')
+            .replace(/\s\s+.*/g, '')
             .trim()
             .replace(/\s/g, '-')
             .toLowerCase()
