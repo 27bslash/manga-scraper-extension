@@ -156,6 +156,11 @@ const Overlay = () => {
     )
 }
 const addNewManga = (data: any, updatePrompt: Function) => {
+    chrome.storage.local.get('blacklist', (result) => {
+        const blacklist = result['blacklist']
+        const filtered = blacklist.filter((x: any) => x['title'] !== data['title']);
+        chrome.storage.local.set({ 'blacklist': filtered || [] })
+    })
     chrome.runtime.sendMessage({
         type: 'insert', data: data
     }, (response) => {
