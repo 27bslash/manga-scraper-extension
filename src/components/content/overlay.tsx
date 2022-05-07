@@ -55,7 +55,7 @@ const Overlay = () => {
                         }
                         x['sources'][data['scansite']] = getLatest(x['sources'], data['scansite'], data['chapter'])
                         x['sources']['any'] = x['sources'][data['scansite']]
-                        x['read'] = x['chapter'] === x['latest']
+                        x['read'] = +x['chapter'] >= +x['latest']
                         console.log('updated series info:', x)
                         updateManga(x, updatePrompt)
                     }
