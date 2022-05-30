@@ -122,7 +122,11 @@ export default function CheckboxList() {
         switch (type) {
             case 'toggleView':
                 setShowAll(b)
-                updateData()
+                sortData()
+                setAddNew(false)
+                break;
+            case 'addNew':
+                setAddNew(b)
                 break;
             default:
                 break;
