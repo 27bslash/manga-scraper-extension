@@ -181,17 +181,23 @@ export default function CheckboxList() {
         <Container sx={{ maxWidth: '440px', padding: 0 }}>
             {JSON.stringify(showAll)}
             <BasicTabs updateRead={updateRead} showAll={showAll} checked={checked} handleDelete={handleDelete} handleClick={handleClick} totalData={totalData} />
-            <Container className='terstcont' sx={{ display: 'flex', backgroundColor: 'rgb(55, 65 ,127)' }}>
-                <MasterBox toggleAll={toggleAll} />
-                <Search data={data} filterData={filterData} showAll={showAll} />
-            </Container>
-            <List dense sx={{ width: '100%', padding: 0 }}>
-                {data.map((value, key: number) => {
-                    return (
-                        <MListItem data={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
-                    );
-                })}
-            </List >
+            {!addNew ? (
+                <>
+                    <MangaListItemControls data={data} toggleAll={toggleAll} showAll={showAll} filterData={filterData} />
+                    <List dense sx={{ width: '100%', padding: 0 }}>
+                        {data.map((value, key: number) => {
+                            return (
+                                <MListItem data={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
+                            );
+                        })}
+                    </List >
+                </>
+            ) : (
+                <div className="trest">
+                    <MangaListItemControls filterData={filterData} allManga={props.allManga} />
+                    <SearchResults data={data} addNewManga={addNewManga} />
+                </div>
+            )}
         </Container >
     );
 }
