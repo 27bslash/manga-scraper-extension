@@ -6,42 +6,71 @@ import { useEffect } from 'react';
 import Manga from '../../types/manga';
 
 const Search = (props: any) => {
-    const data = props.data;
     const [value, setValue] = useState('');
-    const [m, setM] = useState(props.data);
-    // const requestSearch = (searchedVal: string) => {
-    //     const filteredRows = data.filter((row: { name: string; }) => {
-    //         return row.name.toLowerCase().includes(searchedVal.toLowerCase());
-    //     });
-    //     setData(filteredRows);
-    // };
+    const [m, setM] = useState(props.data || []);
+    const [dataRecieved, setDataRecieved] = useState(false);
+
+    let sorted: Manga[] = []
+    let minLen = 3
+    if (props.data) minLen = 0
+
     const initData = () => {
-        chrome.storage.local.get('manga-list', (res) => {
-            const mangaList = res['manga-list']
-            if (props.showAll) {
-                setM(mangaList)
+        if (props.data) {
+
+            chrome.storage.local.get('manga-list', (res) => {
+                const mangaList = res['manga-list']
+                if (props.showAll) {
+                    setM(mangaList)
+                }
+                else {
+                    setM(m.filter((x: Manga) => !x.read))
+                }
+            })
+            if (m) {
+                setDataRecieved(true)
             }
-            else {
-                setM(m.filter((x: Manga) => !x.read))
-            }
-        })
+        } else {
+            chrome.storage.local.get('manga-list', (res) => {
+                const mangaList = res['manga-list']
+                const titleList = mangaList.map((x: Manga) => x.title)
+                if (props.allManga) {
+                    console.log('allManga')
+                    const filteredData = props.allManga.filter((x: Manga) => {
+                        return !titleList.includes(x['title'])
+                    })
+                    if (filteredData.length > 0) {
+                        setDataRecieved(true)
+                        setM(filteredData)
+                        console.log('%c  data received', 'color: green', filteredData.length)
+                    }
+                }
+            })
+        }
         setValue('')
+
     }
     useEffect(() => {
         initData()
     }, []);
     useEffect(() => {
-        initData()
+        if (props.data) {
+            initData()
+        }
     }, [props.showAll])
+    useEffect(() => {
+        if (props.allManga) {
+            initData()
+        }
+    }, [props.allManga])
     useEffect(() => {
         props.filterData(sorted)
     }, [value])
-    const sorted = matchSorter(m.map((x: Manga) => {
-        x.title = x.title.replace(/-/g, ' ')
-        return x
-
-    }), value, { keys: ['title'] })
-
+    if (value.length > minLen) {
+        sorted = matchSorter(m.map((x: any) => {
+            x.title = x.title.replace(/-/g, ' ')
+            return x
+        }), value, { keys: [{ threshold: matchSorter.rankings.CONTAINS, key: 'title' }] })
+    }
     return (
         <div className="search-container" style={{
             marginRight: 0,
@@ -65,11 +94,11 @@ const Search = (props: any) => {
                         display: 'none'
                     }
                 }}
-                
                 color="primary"
                 id="standard-basic"
                 placeholder='Search...'
                 label=""
+                disabled={!dataRecieved}
                 variant="standard"
                 onChange={(e) => setValue(e.target.value)} />
         </div >
