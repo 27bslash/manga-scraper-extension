@@ -25,8 +25,25 @@ export default function CheckboxList() {
         })
     }, [])
     useEffect(() => {
-        updateData()
-    }, [showAll, refresh])
+    useEffect(() => {
+        chrome.storage.local.get('manga-list', (res) => {
+            const mangalist = res['manga-list']
+            let updated = false
+            mangalist.forEach((x: Manga) => {
+                if (x.chapter === x.latest && x.read === false) {
+                    x.read = true
+                    updated = true
+                }
+            }
+            )
+            if (updated) {
+                chrome.storage.local.set({ 'manga-list': mangalist })
+                // updateDatabase('update', mangalist)
+                sortData()
+            }
+        }
+        )
+    }, [refresh])
     // const [data, setData] = useState(testData)
     const toggleAll = (b: boolean) => {
         if (!b) {
