@@ -4,6 +4,7 @@ import OptionsMenu from "./options-menu";
 import Manga from '../../../../types/manga';
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en.json'
+import Checkboxbutton from './../../buttons/checkboxButton';
 TimeAgo.addDefaultLocale(en)
 
 interface MListItemProps {
@@ -90,30 +91,7 @@ const MListItem = (props: MListItemProps) => {
 
             >
                 <Grid item xs={2} sm={2} md={2}>
-                    <ListItemButton role={undefined} onClick={props.handleToggle(props.idx)}
-                        sx={{
-                            ml: 1,
-                            "&.MuiListItemButton-root:hover": {
-                                bgcolor: "transparent"
-                            },
-                            bgColor: props.checked.includes(props.idx) ? "primary.light" : "transparent"
-                        }}
-                        disableRipple
-                        dense>
-                        <ListItemIcon>
-                            <Checkbox
-                                edge="end"
-                                checked={props.checked.indexOf(props.idx) !== -1}
-                                tabIndex={-1}
-                                disableRipple={true}
-                                // inputProps={{ 'aria-labelledby': labelId }}
-                                sx={{
-                                    width: 20,
-                                    padding: 0
-                                }}
-                            />
-                        </ListItemIcon>
-                    </ListItemButton>
+                    <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} />
 
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
