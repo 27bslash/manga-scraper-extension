@@ -112,7 +112,7 @@ export default function CheckboxList() {
         }
     }
 
-    const updateData = () => {
+    const sortData = () => {
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list'].sort((a: Manga, b: Manga) => {
                 let currentSourceA = 'any'
