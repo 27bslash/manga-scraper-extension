@@ -28,6 +28,7 @@ function TabToggler(props: TabtogglerProps) {
                 }} >
                     <Tab sx={{ color: '#fff !important' }} className='align-right' label="Unread" onClick={() => props.handleClick(false, 'toggleView')} />
                     <Tab sx={{ color: '#fff !important' }} label="All series" onClick={() => props.handleClick(true, 'toggleView')} />
+                    <Tab sx={{ color: '#fff !important' }} label="Add New" onClick={() => props.handleClick(true, 'addNew')} />
                 </Tabs>
             )}
             {props.checked.length === 0 && filteredData.length === 0 && (
@@ -37,7 +38,9 @@ function TabToggler(props: TabtogglerProps) {
                     }
                 }}>
                     <Tab sx={{ color: '#fff !important' }} label="All series" onClick={() => props.handleClick(true, 'toggleView')} />
+                    <Tab sx={{ color: '#fff !important' }} label="Add New" onClick={() => props.handleClick(true, 'addNew')} />
                 </Tabs>
+
             )}
 
             {props.checked.length > 0 && props.showAll && (
@@ -58,6 +61,7 @@ function TabToggler(props: TabtogglerProps) {
                     },
                 }} >
                     <Tab sx={{ color: '#fff !important' }} className='align-right' label="read" onClick={() => props.updateRead(true)} />
+                    <Tab sx={{ color: '#fff !important' }} label="Add New" onClick={() => props.handleClick(true, 'addNew')} />
                 </Tabs>
 
             )
