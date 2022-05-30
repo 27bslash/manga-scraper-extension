@@ -35,14 +35,13 @@ const MListItem = (props: MListItemProps) => {
             )
         })
     }
+
     useEffect(() => {
+        getLatestLink()
         if (props.data.current_source) {
             setCurrentSource(props.data.current_source)
             // console.log('in', props.data, '\n', currentSource, props.data.current_source)
         }
-    }, [])
-    useEffect(() => {
-        getLatestLink()
     }, [title])
     // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
     const timeAgo = new TimeAgo('en-US')
