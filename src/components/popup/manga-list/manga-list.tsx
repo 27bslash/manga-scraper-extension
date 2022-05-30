@@ -143,9 +143,19 @@ export default function CheckboxList() {
     const filterData = (x: Manga[]) => {
         setData(x)
     }
-    // rgb(30 41 101) top bg
-    // bot bg rgb(55 65 127)
-    // divider rgb(119, 119, 203)
+    const addNewManga = (manga: Manga) => {
+        chrome.storage.local.get('manga-list', (res) => {
+            const mangaList = res['manga-list']
+            console.log('add new manga', manga)
+            manga['chapter'] = manga['latest']
+            manga['read'] = true
+            manga['current_source'] = 'any'
+            res['manga-list'].push(manga)
+            chrome.storage.local.set({ 'manga-list': mangaList })
+            const titleList = mangaList.map((x: Manga) => x.title)
+            setData(data.filter((x: Manga) => !titleList.includes(x.title)))
+        })
+    }
     return (
         <Container sx={{ maxWidth: '440px', padding: 0 }}>
             {JSON.stringify(showAll)}
