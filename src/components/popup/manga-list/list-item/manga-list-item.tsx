@@ -117,9 +117,15 @@ const MListItem = (props: MListItemProps) => {
 
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
-                    <a href={url} rel='noreferrer' target='_blank'>
-                        <p className="series-title">{capitalizeTitle(title)}</p>
-                    </a>
+                    {+props.data['latest'] - +props.data['chapter'] <= 1 ? (
+                        <a href={latestUrl} rel='noreferrer' target='_blank'>
+                            <p className="series-title">{capitalizeTitle(title)}</p>
+                        </a>
+                    ) : (
+                        <a href={url} rel='noreferrer' target='_blank'>
+                            <p className="series-title">{capitalizeTitle(title)}</p>
+                        </a>
+                    )}
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
                     <p className='list-item-text' id='chapter-text' >
