@@ -205,20 +205,17 @@ const extractTitle = (title: string) => {
             .replace(chapterRegex, "")
             .replace(/chapter|episode/gi, "")
         // remove special characters
-        const match = seriesTitle.match(/(?<= -|::).*(?=:: chapter| -)/gim)
+        const match = seriesTitle.match(/(?<=[-|:~] ).*(?=\W)/gmi)
         if (match) {
             if (match[0].match(/\w/gim)) {
                 seriesTitle = match[0]
             }
-            console.log('match', match[0])
         }
-        console.log(seriesTitle)
-        seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "")
-            .replace(/[-–]+/g, ' ')
-            .replace(/\s\s+.*/g, '')
-            .trim()
-            .replace(/\s/g, '-')
-            .toLowerCase()
+
+        seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "");
+        seriesTitle = seriesTitle.replace(/\s?[-–]\s?/g, " ");
+        seriesTitle = seriesTitle.trim().replace(/\s\s+.*/g, "");
+        seriesTitle = seriesTitle.trim().replace(/\s/g, "-").toLowerCase();
         return seriesTitle
     }
     const scans = (title: string) => {
