@@ -47,10 +47,13 @@ const Overlay = () => {
     useEffect(() => {
         chrome.storage.local.get('manga-list', (result) => {
             result['manga-list'].forEach((x: Manga) => {
-                if (x['title'] === data['title']) {
+                // console.log(data.title, x['title'])
+                if (titleSimilarity(data.title, x)) {
                     // update chapter
+                    console.log('title is similar', x['title'])
                     setShowPrompt(false)
                     if (data['chapter'] > x['chapter']) {
+                        console.log('update chapter')
                         x['chapter'] = data['chapter']
                         x['link'] = data['link']
                         if (!('sources' in x)) {
@@ -65,7 +68,7 @@ const Overlay = () => {
                 }
             })
         })
-    }, [])
+    }, [data]) // eslint-disable-line react-hooks/exhaustive-deps
     // eslint-disable-line react-hooks/exhaustive-deps
     const updatePrompt = (b: boolean) => {
         setShowPrompt(b)
@@ -215,6 +218,19 @@ const Overlay = () => {
             )}
         </div>
     )
+}
+const titleSimilarity = (title: string, manga: Manga) => {
+    const titleWords = title.split('-')
+    const mangaWords = manga['title'].split('-')
+    const len = titleWords.length > mangaWords.length ? titleWords.length : mangaWords.length
+    let similarity = 0
+    titleWords.forEach((x) => {
+        if (mangaWords.includes(x)) {
+            similarity++
+        }
+    })
+    // console.log('similarity: ', similarity / len, title)
+    return similarity / len >= 0.75
 }
 const addNewManga = (data: any, updatePrompt: Function) => {
     chrome.storage.local.get('blacklist', (result) => {
