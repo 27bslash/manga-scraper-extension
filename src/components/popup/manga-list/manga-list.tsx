@@ -2,15 +2,23 @@
 import { useState, useEffect } from 'react';
 import List from '@mui/material/List';
 import BasicTabs from '../nav/list-top';
-import { Box, Container } from '@mui/material';
+import { Box, Checkbox, Container, Grid, IconButton, ListItem, ListItemButton, ListItemIcon, ListItemText, setRef } from '@mui/material';
 import Manga from '../../../types/manga';
 import MListItem from './list-item/manga-list-item';
 import Search from '../../search/search';
 import MasterBox from './../../master-box';
+import MangaListItemControls from './manga-list-controls';
+import Checkboxbutton from './../buttons/checkboxButton';
+import SearchResults from '../../search/searchResults';
 
-
-export default function CheckboxList() {
-    const [checked, setChecked] = useState<number[]>([]);
+interface listProps {
+    allManga: Manga[]
+}
+interface CheckedType {
+    [key: string]: string
+}
+export default function CheckboxList(props: listProps) {
+    const [checked, setChecked] = useState<CheckedType[]>([]);
     const [showAll, setShowAll] = useState(false);
     const [data, setData] = useState<Manga[]>([])
     const [totalData, setTotalData] = useState<Manga[]>([])
@@ -53,7 +61,10 @@ export default function CheckboxList() {
     // const [data, setData] = useState(testData)
     const toggleAll = (b: boolean) => {
         if (!b) {
-            setChecked(data.map((_, i) => i))
+            const mp = data.map((x, i) => {
+                return { [String(i)]: x['title'] }
+            })
+            setChecked(mp)
         } else {
             setChecked([])
         }
@@ -61,13 +72,17 @@ export default function CheckboxList() {
     chrome.storage.onChanged.addListener(() => {
         setRefresh(!refresh)
     })
-    const handleToggle = (value: number) => () => {
+    const handleToggle = (value: number, title: string) => () => {
         // console.log(value)
 
-        const currentIndex = checked.indexOf(value);
+        const chkKeys: number[] = []
+        checked.forEach((x: {}) => {
+            chkKeys.push(+Object.keys(x)[0])
+        })
+        const currentIndex = chkKeys.indexOf(value);
         const newChecked = [...checked];
         if (currentIndex === -1) {
-            newChecked.push(value);
+            newChecked.push({ [String(value)]: title });
         } else {
             newChecked.splice(currentIndex, 1);
         }
@@ -103,9 +118,8 @@ export default function CheckboxList() {
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             mangaList.forEach((manga: Manga, i: number) => {
-                checked.forEach(check => {
-                    if (newData[check].title === manga['title']) {
-                        console.log('title matches', i, check)
+                for (let check in checked) {
+                    if (newData[parseInt(check)].title === manga['title']) {
                         if (b) {
                             manga.read = true
                             manga.chapter = manga.latest
@@ -115,11 +129,10 @@ export default function CheckboxList() {
                             manga.chapter = '1'
                         }
                     }
-                })
+                }
             })
             updateDatabase('update', mangaList)
             chrome.storage.local.set({ 'manga-list': mangaList })
-            setRefresh(!refresh)
         })
 
 
@@ -157,9 +170,9 @@ export default function CheckboxList() {
                 }
                 return b['sources'][currentSourceB]['time_updated'] - a['sources'][currentSourceA]['time_updated']
             })
-            console.log(mangaList)
             try {
                 if (mangaList) {
+                    setTotalData(mangaList)
                     if (!showAll) {
                         setData(mangaList.filter((x: Manga) => !x.read))
                     } else {
@@ -203,9 +216,9 @@ export default function CheckboxList() {
             setData(data.filter((x: Manga) => !titleList.includes(x.title)))
         })
     }
+
     return (
         <Container sx={{ maxWidth: '440px', padding: 0 }}>
-            {JSON.stringify(showAll)}
             <BasicTabs updateRead={updateRead} showAll={showAll} checked={checked} handleDelete={handleDelete} handleClick={handleClick} totalData={totalData} />
             {!addNew ? (
                 <>
@@ -227,3 +240,5 @@ export default function CheckboxList() {
         </Container >
     );
 }
+
+

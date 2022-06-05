@@ -11,7 +11,7 @@ interface MListItemProps {
     data: Manga
     showAll: boolean,
     idx: number,
-    checked: number[],
+    checked: any,
     handleToggle: Function,
     handleDelete: (value: number) => void,
 }
@@ -90,8 +90,7 @@ const MListItem = (props: MListItemProps) => {
 
             >
                 <Grid item xs={2} sm={2} md={2}>
-                    <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} />
-
+                    <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} title={title} />
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
                     {+props.data['latest'] - +props.data['chapter'] <= 1 ? (
