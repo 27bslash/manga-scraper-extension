@@ -1,25 +1,50 @@
 {
-  "name": "manga scraper",
-  "description": "Build an Extension!",
-  "version": "1.0",
+  "name": "Reddit Manga List",
+  "description": "Scrapes manga from reddit then adds to reading list",
+  "version": "0.1",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "index.html",
-    "default_title": "test the popup"
+    "default_title": "manga list"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "*://www.asurascans.com/*",
+        "*://slayerscans.com/*",
+        "*://mangaplus.shueisha.co.jp/*",
+        "*://mangasushi.net/*",
+        "*://kouhai.work/*",
+        "*://realmscans.com/*",
+        "*://comikey.com/*",
+        "*://danke.moe/*",
+        "*://cubari.moe/*",
+        "*://reader.kireicake.com/*",
+        "*://setsuscans.com/*",
+        "*://luminousscans.com/*",
+        "*://reaperscans.com/*",
+        "*://mangadex.org/*",
+        "*://dynasty-scans.com/*",
+        "*://guya.moe/*",
+        "*://flamescans.org/*",
+        "*://viewer.heros-web.com/*",
+        "*://gdstmp.site/*",
+        "*://www.webtoons.com/*",
+        "*://mm-scans.org/*",
+        "*://leviatanscans.com/*",
+        "*://onepiecechapters.com/*",
+        "*://alpha-scans.org/*",
+        "*://sensescans.com/*"
+      ],
       "run_at": "document_end",
       "js": ["static/js/content.js"],
       "css": ["App.css"]
     }
   ],
   "permissions": [
-    "27bslash.eu.pythonanywhere.com/*",
     "alarms",
     "storage",
     "scripting",
