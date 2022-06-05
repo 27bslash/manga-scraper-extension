@@ -2,12 +2,12 @@
 chrome.runtime.onInstalled.addListener((details) => {
   //   setStorageKey("user", "test");
   // generate unique id:
-  chrome.alarms.create("refresh", { periodInMinutes: 1 });
+  chrome.alarms.create("refresh", { periodInMinutes: 5 });
   if (details.reason === "install") {
     console.log("This is a first install!");
     new Date();
     const id = String(Date.now());
-    chrome.storage.sync.set({ id: id });
+    chrome.storage.local.set({ id: id });
     fetch(
       `https://27bslash.eu.pythonanywhere.com/db/manga-list/create/${id}`
     ).then((res) => {
@@ -42,7 +42,7 @@ const as = async () => {
 };
 const get_user = async () => {
   const p = new Promise((resolve, reject) => {
-    chrome.storage.sync.get("id", (result) => {
+    chrome.storage.local.get("id", (result) => {
       resolve(result.id);
     });
   });
@@ -77,10 +77,6 @@ async function getTabId() {
   return responseTabID;
 }
 
-// TODO
-// when on a site in the scans db check for chapter and update it, if it is not on the list have option to add to list
-// FIRST data is scraped from reddit
-//
 // testMessage();
 class Background {
   async sendDataToContent(tabID) {
@@ -100,67 +96,46 @@ class Background {
     }
   }
   updateBadgeText() {
-    chrome.storage.sync.get("manga-list", (result) => {
-      console.log("result", result);
-      let badgeText = result["manga-list"]
-        .filter((x) => !x.read)
-        .length.toString();
-      if (badgeText === "0") {
+    chrome.storage.local.get("manga-list", (result) => {
+      const filtered = result["manga-list"].filter((x) => !x.read);
+      console.log("filtered", filtered);
+      let badgeText = filtered.length;
+      if (badgeText === 0) {
         badgeText = "";
       }
-      chrome.action.setBadgeText({ text: badgeText });
+      console.log("updateBadgeText", badgeText);
+      chrome.action.setBadgeText({ text: String(badgeText) });
     });
   }
   init() {
-    // 1. Create a mapping for message listeners
-    // this.registerMessengerRequests();
-
-    // 2. Listen for messages from background and run the listener from the map
-    // create alarm after extension is installed / upgraded
     updateStorage();
     this.updateBadgeText();
+    chrome.storage.onChanged.addListener(() => {
+      console.log("storage changed");
+      this.updateBadgeText();
+    });
+
     chrome.alarms.onAlarm.addListener((alarm) => {
       console.log(alarm.name); // refresh
       updateStorage();
       this.updateBadgeText();
     });
-    // console.log("inittt");
-    // setInterval(() => {
-    //   chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-    //     this.sendDataToContent(tabs[0].id);
-    //   });
-    // }, 5000);
+
     console.log("inited");
     chrome.runtime.onMessage.addListener(function (
       request,
       sender,
       sendResponse
     ) {
-      const response = postData(request.type, request.data);
-      console.log("response", response);
       const type = request.type;
+      (async () => {
+        const response = await postData(request.type, request.data);
+        console.log("response", response);
+        sendResponse({ [type]: response, data: request.data });
+      })();
       updateStorage();
-      sendResponse({ [type]: response, data: request.data });
-
-      //   if (request.type === "update") {
-      //     console.log("update message received");
-      //     const response = postData("update", request.data).then((res) => {
-      //       console.log("response", res);
-      //       sendResponse(res);
-      //     });
-      //     // sendResponse({ update: response });
-      //   } else if (request.type === "delete") {
-      //     console.log("delete message received");
-      //     const response = postData("delete", request.data);
-      //     updateStorage();
-      //     sendResponse({ delete: response, data: request.data });
-      //   } else {
-      //     console.log("delete message received");
-      //     const response = postData("insert", request.data);
-      //     updateStorage();
-      //     sendResponse({ insert: response, data: request.data });
-      //   }
     });
+    this.updateBadgeText();
   }
 }
 const updateStorage = async () => {
@@ -170,19 +145,13 @@ const updateStorage = async () => {
   );
   const json = await data.json();
   const mangaList = json["document"]["manga-list"];
-  chrome.storage.sync.set({ "manga-list": mangaList });
-
-  // .then((res) => {
-  //   console.log("b response", res);
-  //   res.json().then((fin) => {
-  //     console.log(fin);
-  // });
+  console.log("updateStorage", mangaList.length);
+  chrome.storage.local.set({ "manga-list": mangaList });
 };
 const postData = async (method, data) => {
   const user = await get_user();
   const url = `https://27bslash.eu.pythonanywhere.com/db/manga-list/${method}/${user}`;
   data = JSON.stringify(data);
-  console.log("data", data);
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -190,7 +159,7 @@ const postData = async (method, data) => {
     },
     body: JSON.stringify(data),
   });
-  console.log("response", response);
-  return response.status;
+  const j = await response.json();
+  return j;
 };
 new Background().init();
