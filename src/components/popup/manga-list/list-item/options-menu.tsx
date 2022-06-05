@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
@@ -7,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 
 interface OptionsMenuProps {
-    sources: { [key: string]: { url: string, latest: string } },
+    sources: { [key: string]: { url: string, latest: string, latest_link: string } },
     currentSource: string,
     updateUrl: (key: string) => void,
 }
@@ -15,11 +14,18 @@ export default function OptionsMenu(props: OptionsMenuProps) {
     const [source, setSource] = useState(props.currentSource);
 
     const handleChange = (event: SelectChangeEvent) => {
-        console.log(event.target.value)
         setSource(event.target.value as string);
         props.updateUrl(event.target.value as string)
     };
-    // console.log('options current source', source)
+    useEffect(() => {
+        if (props.currentSource === 'any') {
+            for (const k in props.sources) {
+                if (k !== 'any' && props.sources[k].latest_link === props.sources[props.currentSource].latest_link) {
+                    setSource(k)
+                }
+            }
+        }
+    }, [props.currentSource, props.sources])
     return (
         <Box>
             <FormControl variant='standard'>
