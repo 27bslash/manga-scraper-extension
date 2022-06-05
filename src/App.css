@@ -137,7 +137,9 @@ a:hover {
   color: rgb(75, 75, 75);
 }
 #demo-simple-select {
-  font-size: 14px;
   border: none;
-  text-transform: uppercase;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  text-transform: bold;
 }
