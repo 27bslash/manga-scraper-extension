@@ -17,6 +17,7 @@ function TabToggler(props: TabtogglerProps) {
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
     };
+    
     const filteredData = props.totalData.filter((x: Manga) => !x.read)
     return (
         <>
@@ -44,7 +45,7 @@ function TabToggler(props: TabtogglerProps) {
             )}
 
             {props.checked.length > 0 && props.showAll && (
-                <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" TabIndicatorProps={{
+                <Tabs value={value} aria-label="basic tabs example" TabIndicatorProps={{
                     style: {
                         display: 'none',
                     },
