@@ -3,6 +3,7 @@ import Manga from './../../types/manga';
 import { IconButton, Snackbar, SnackbarContent } from "@mui/material"
 import CloseIcon from '@mui/icons-material/Close';
 import DoneIcon from '@mui/icons-material/Done';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
 
 interface Test {
     any: string
@@ -22,6 +23,7 @@ const Overlay = () => {
     }, [data])
     console.log(data, document.title)
     const [showPrompt, setShowPrompt] = useState(true)
+    const [confirmationPrompt, setConfirmationPrompt] = useState(false)
     const getLatest = (source: {
         [x: string]: {
             url: string;
@@ -67,6 +69,7 @@ const Overlay = () => {
     // eslint-disable-line react-hooks/exhaustive-deps
     const updatePrompt = (b: boolean) => {
         setShowPrompt(b)
+        setConfirmationPrompt(!b)
     }
     const [open, setOpen] = useState(true);
     const addToBlackList = (title: string) => {
@@ -88,11 +91,45 @@ const Overlay = () => {
         })
     }
     const handleClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-        if (reason === 'clickaway') {
-            return;
+        if (event) {
+            let target = event.target as HTMLElement
+            if (target.tagName === 'path') {
+                const parent = target.parentElement
+                if (parent) {
+                    target = parent
+                }
+            }
+            if (target.tagName === 'svg') {
+                if (target.classList.contains('close-icon-mu')) {
+                    setOpen(false)
+                    addToBlackList(data['title'])
+                    return
+                }
+                else if (target.classList.contains('add-icon-mu')) {
+                    setConfirmationPrompt(true)
+                    setOpen(false)
+                    return
+                }
+            }
+            if (reason === 'clickaway') {
+                setOpen(false)
+                console.log('reason', reason)
+                return
+            }
         }
-        addToBlackList(data['title'])
-        setOpen(false);
+        if (reason === 'timeout' || reason === 'clickaway') {
+            console.log('close', reason)
+            setOpen(false)
+            addNewManga(data, updatePrompt)
+            setConfirmationPrompt(false)
+            return
+        }
+        else {
+            setConfirmationPrompt(false)
+            setOpen(false)
+            return
+        }
+
     };
     const vertical = 'top';
     const horizontal = 'center';
@@ -100,10 +137,10 @@ const Overlay = () => {
         <>
             <IconButton
                 aria-label="open"
-                onClick={() => { addNewManga(data, updatePrompt) }}
+                onClick={handleClose}
 
             >
-                <DoneIcon color='secondary' fontSize='medium' />
+                <DoneIcon color='secondary' fontSize='medium' className='add-icon-mu' />
             </IconButton>
             <IconButton
                 size="small"
@@ -111,7 +148,7 @@ const Overlay = () => {
                 color="inherit"
                 onClick={handleClose}
             >
-                <CloseIcon color='secondary' fontSize="medium" />
+                <CloseIcon color='secondary' fontSize="medium" className='close-icon-mu' />
             </IconButton>
         </>
     );
@@ -129,10 +166,15 @@ const Overlay = () => {
         )
         return true
     }
+    const handleClickAway = () => {
+        addNewManga(data, updatePrompt)
+        setConfirmationPrompt(false)
+    }
 
     return (
-        +data['chapter'] > 10 && showPrompt && checkOpen() ? (
-            <div className="manga-overlay">
+        <div className="manga-overlay">
+
+            {+data['chapter'] > 10 && showPrompt && checkOpen() && (
                 <Snackbar
                     open={open}
                     onClose={handleClose}
@@ -152,14 +194,26 @@ const Overlay = () => {
                         }}
                     />
                 </Snackbar>
-            </div>
-            // <div className='manga-overlay'>start reading ?
-            //     <p onClick={() => addNewManga(data, updatePrompt)}>ok</p>
-            //     <p onClick={() => setShowPrompt(false)} >cancel</p>
-            // </div >
-        ) : (
-            <div></div>
-        )
+            )}
+            {confirmationPrompt && (
+                <ClickAwayListener onClickAway={handleClickAway}>
+                    <Snackbar
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                        open={!open}
+                        onClose={handleClose}
+                        message={data['title'].replace(/-/g, ' ') + ' ' + data['chapter']}
+                        autoHideDuration={3000}
+                        sx={{ textTransform: 'capitalize', color: 'secondary !important' }}
+                        action={
+                            <>
+                                <p onClick={handleClose} className='undo-button-mu'>
+                                    undo
+                                </p>
+                            </>}
+                    />
+                </ClickAwayListener>
+            )}
+        </div>
     )
 }
 const addNewManga = (data: any, updatePrompt: Function) => {
