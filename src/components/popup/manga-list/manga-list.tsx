@@ -168,11 +168,26 @@ export default function CheckboxList() {
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             console.log('add new manga', manga)
-            manga['chapter'] = manga['latest']
-            manga['read'] = true
-            manga['current_source'] = 'any'
-            res['manga-list'].push(manga)
-            chrome.storage.local.set({ 'manga-list': mangaList })
+            manga['title'] = manga['title'].toLowerCase().replace(/\s/g, '-')
+            const mObject = {
+                'title': manga['title'],
+                'chapter': manga['latest'],
+                'read': true,
+                'latest': manga['latest'],
+                'sources': manga['sources'],
+                'current_source': 'any',
+                'domain': manga['domain'],
+                'link': manga['link'],
+                'scansite': manga['scansite']
+            }
+            // check if mangalist already has this manga
+            if (mangaList.find((x: Manga) => x.title === manga['title'])) {
+                console.log('already in list')
+            } else {
+                mangaList.push(mObject)
+                updateDatabase('update', mangaList)
+                chrome.storage.local.set({ 'manga-list': mangaList })
+            }
             const titleList = mangaList.map((x: Manga) => x.title)
             setData(data.filter((x: Manga) => !titleList.includes(x.title)))
         })
