@@ -69,20 +69,25 @@ export default function CheckboxList() {
         setChecked(newChecked);
     };
     const handleDelete = (value = -1) => {
-        const newData = [...data];
+        let newData = [...totalData];
         console.log('del', value)
+        console.log('search data', newData)
         if (value !== -1) {
             const spliced = newData.splice(value, 1)
             setData(newData)
             setChecked([])
             return
         };
-        checked.sort((a, b) => b - a).forEach(x => {
-            newData.splice(x, 1)
-            console.log(x, newData)
+        checked.forEach(x => {
+            const chkTitle = Object.values(x)[0].toLowerCase().replace(/\s/g, '-')
+            console.log('chk title', chkTitle)
+            newData = newData.filter((manga: Manga) => {
+                return manga.title !== chkTitle
+            })
         })
-        updateDatabase('update', newData)
         chrome.storage.local.set({ 'manga-list': newData })
+        updateDatabase('update', newData)
+        setTotalData(newData)
         setRefresh(!refresh)
         // chrome.storage.local.set({ 'manga-list': newData })
     };
