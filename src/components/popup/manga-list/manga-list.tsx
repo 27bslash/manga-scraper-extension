@@ -15,6 +15,8 @@ export default function CheckboxList() {
     const [data, setData] = useState<Manga[]>([])
     const [totalData, setTotalData] = useState<Manga[]>([])
     const [refresh, setRefresh] = useState(false)
+    const [addNew, setAddNew] = useState(false)
+
     useEffect(() => {
         chrome.storage.local.get('manga-list', (res) => {
             setTotalData(res['manga-list'])
@@ -25,6 +27,10 @@ export default function CheckboxList() {
         })
     }, [])
     useEffect(() => {
+        if (!addNew) {
+            sortData()
+        }
+    }, [refresh, showAll])
     useEffect(() => {
         chrome.storage.local.get('manga-list', (res) => {
             const mangalist = res['manga-list']
