@@ -9,11 +9,9 @@ TimeAgo.addDefaultLocale(en)
 
 interface MListItemProps {
     data: Manga
-    showAll: boolean,
     idx: number,
     checked: any,
     handleToggle: Function,
-    handleDelete: (value: number) => void,
 }
 const MListItem = (props: MListItemProps) => {
     // popup list title , edit button current chapter, time ago seen, delete button
@@ -22,27 +20,26 @@ const MListItem = (props: MListItemProps) => {
     const [url, setUrl] = useState('');
     const [latestUrl, setLatestUrl] = useState('');
     const [currentSource, setCurrentSource] = useState(props.data.current_source);
+
+
     const getLatestLink = () => {
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             mangaList.forEach((res: Manga) => {
-                if (res.title === props.data.title) {
+                if (res.title === props.data.title.replace(/\s/g, '-').toLowerCase()) {
+                    // console.log('latestlink', props.data.title)
                     const link = res.sources[currentSource].latest_link
                     setLatestUrl(link)
-                    setUrl(res.sources[currentSource].url)
+                    setUrl(res.sources[currentSource].url || props.data.link)
                 }
             }
             )
         })
     }
-
+    console.log('data', props.data)
     useEffect(() => {
         getLatestLink()
-        if (props.data.current_source) {
-            setCurrentSource(props.data.current_source)
-            // console.log('in', props.data, '\n', currentSource, props.data.current_source)
-        }
-    }, [title])
+    }, [props.data])
     // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
     const timeAgo = new TimeAgo('en-US')
     const currentTime = new Date().getTime() / 1000
@@ -101,7 +98,6 @@ const MListItem = (props: MListItemProps) => {
                     </IconButton>
                 }
                 disablePadding={true}
-
             >
                 <Grid item xs={2} sm={2} md={2}>
                     <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} title={title} />
