@@ -78,6 +78,20 @@ const MListItem = (props: MListItemProps) => {
     }
 
     // console.log('mlist current source', currentSource)
+    const updateRead = () => {
+        chrome.storage.local.get('manga-list', (res) => {
+            res['manga-list'].forEach((element: Manga) => {
+                if (element.title === props.data.title) {
+                    element.read = true
+                    element.chapter = element.latest
+                }
+            })
+            chrome.storage.local.set({ 'manga-list': res['manga-list'] }, () => {
+                console.log('updated')
+            })
+            chrome.runtime.sendMessage({ type: 'update', data: res['manga-list'] })
+        })
+    }
     return (
         <Grid className="manga-updater-list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'primary.main' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
             <ListItem
@@ -94,13 +108,9 @@ const MListItem = (props: MListItemProps) => {
                 </Grid>
                 <Grid item xs={5} sm={5} md={5}>
                     {+props.data['latest'] - +props.data['chapter'] <= 1 ? (
-                        <a href={latestUrl} rel='noreferrer' target='_blank'>
-                            <p className="series-title">{capitalizeTitle(title)}</p>
-                        </a>
+                        <TitleElement url={latestUrl} updateRead={updateRead} title={title} />
                     ) : (
-                        <a href={url} rel='noreferrer' target='_blank'>
-                            <p className="series-title">{capitalizeTitle(title)}</p>
-                        </a>
+                        <TitleElement url={url} updateRead={updateRead} title={title} />
                     )}
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
@@ -109,7 +119,7 @@ const MListItem = (props: MListItemProps) => {
                             {props.data['chapter']}
                         </a>
                         /
-                        <a href={latestUrl} rel='noreferrer' target='_blank'>
+                        <a href={latestUrl} rel='noreferrer' target='_blank' onClick={() => updateRead()}>
                             {props.data['latest'] || 100}
                         </a>
                     </p>
@@ -148,5 +158,12 @@ const capitalizeTitle = (title: string) => {
         .join(' ')
 };
 
-
+const TitleElement = (props: any) => {
+    console.log('title element', props.title, props.url)
+    return (
+        <a href={props.url} rel='noreferrer' target='_blank' onClick={() => props.updateRead()}>
+            <p className="series-title">{capitalizeTitle(props.title)}</p>
+        </a>
+    )
+}
 export default MListItem
