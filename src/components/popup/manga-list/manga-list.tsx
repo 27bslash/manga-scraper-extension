@@ -159,17 +159,7 @@ export default function CheckboxList(props: listProps) {
 
     const sortData = () => {
         chrome.storage.local.get('manga-list', (res) => {
-            const mangaList = res['manga-list'].sort((a: Manga, b: Manga) => {
-                let currentSourceA = 'any'
-                let currentSourceB = 'any'
-                if ('current_source' in a) {
-                    currentSourceA = a.current_source
-                }
-                if ('current_source' in b) {
-                    currentSourceB = b.current_source
-                }
-                return b['sources'][currentSourceB]['time_updated'] - a['sources'][currentSourceA]['time_updated']
-            })
+            const mangaList = sortByReleaseTime(res['manga-list'])
             try {
                 if (mangaList) {
                     setTotalData(mangaList)
@@ -185,8 +175,23 @@ export default function CheckboxList(props: listProps) {
         })
         setChecked([])
     }
+    const sortByReleaseTime = (list: Manga[]) => {
+        list.sort((a: Manga, b: Manga) => {
+            let currentSourceA = 'any'
+            let currentSourceB = 'any'
+            if ('current_source' in a) {
+                currentSourceA = a.current_source
+            }
+            if ('current_source' in b) {
+                currentSourceB = b.current_source
+            }
+            return b['sources'][currentSourceB]['time_updated'] - a['sources'][currentSourceA]['time_updated']
+        })
+        return list
+    }
     const filterData = (x: Manga[]) => {
-        setData(x)
+        setData(sortByReleaseTime(x))
+
     }
     const addNewManga = (manga: Manga) => {
         chrome.storage.local.get('manga-list', (res) => {
