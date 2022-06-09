@@ -2,13 +2,10 @@
 import { useState, useEffect } from 'react';
 import List from '@mui/material/List';
 import BasicTabs from '../nav/list-top';
-import { Box, Checkbox, Container, Grid, IconButton, ListItem, ListItemButton, ListItemIcon, ListItemText, setRef } from '@mui/material';
+import { Container } from '@mui/material';
 import Manga from '../../../types/manga';
 import MListItem from './list-item/manga-list-item';
-import Search from '../../search/search';
-import MasterBox from './../../master-box';
 import MangaListItemControls from './manga-list-controls';
-import Checkboxbutton from './../buttons/checkboxButton';
 import SearchResults from '../../search/searchResults';
 
 interface listProps {
@@ -110,7 +107,6 @@ export default function CheckboxList(props: listProps) {
         updateDatabase('update', newData)
         setTotalData(newData)
         setRefresh(!refresh)
-        // chrome.storage.local.set({ 'manga-list': newData })
     };
     const updateRead = (b: boolean) => {
         console.log('update read', b)
@@ -231,7 +227,7 @@ export default function CheckboxList(props: listProps) {
                     <List dense sx={{ width: '100%', padding: 0 }}>
                         {data.map((value, key: number) => {
                             return (
-                                <MListItem data={value} handleToggle={handleToggle} handleDelete={handleDelete} checked={checked} showAll={showAll} idx={key} />
+                                <MListItem data={value} handleToggle={handleToggle} checked={checked} idx={key} />
                             );
                         })}
                     </List >
