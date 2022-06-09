@@ -46,9 +46,7 @@
   ],
   "permissions": [
     "alarms",
-    "storage",
-    "scripting",
-    "activeTab"
+    "storage"
   ],
   "icons": {
     "16": "logo192.png",

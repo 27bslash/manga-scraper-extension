@@ -1,6 +1,5 @@
 /* eslint-disable no-undef */
 chrome.runtime.onInstalled.addListener((details) => {
-  //   setStorageKey("user", "test");
   // generate unique id:
   chrome.alarms.create("refresh", { periodInMinutes: 5 });
   if (details.reason === "install") {
@@ -14,32 +13,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       console.log("create", res);
     });
   }
-  //   get_user()
-  //     .then((res) => {
-  //       const user = res;
-  //       console.log("user", user);
-  //       const req = fetch(
-  //         `https://27bslash.eu.pythonanywhere.com/db/manga-list/${user}`
-  //       )
-  //         .then((r) => {
-  //           console.log("r", r.text());
-  //         })
-  //         .catch((error) => {
-  //           console.log(error);
-  //         });
-  //     })
-  //     .catch((e) => {
-  //       console.log(e);
-  //     });
 });
-const as = async () => {
-  console.log(get_user());
-  get_user().then((res) => {
-    console.log(res);
-  });
-  //   console.log("uuu", u);
-  return "test";
-};
+
 const get_user = async () => {
   const p = new Promise((resolve, reject) => {
     chrome.storage.local.get("id", (result) => {
@@ -49,52 +24,10 @@ const get_user = async () => {
   return await p;
 };
 
-async function getCurrentTab() {
-  let queryOptions = { active: true, currentWindow: true };
-  let [tab] = await chrome.tabs.query(queryOptions);
-  return tab.id;
-}
-function getTabID() {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.tabs.query(
-        {
-          active: true,
-        },
-        function (tabs) {
-          resolve(tabs[0].id);
-        }
-      );
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
-
-//function where you need it
-async function getTabId() {
-  let responseTabID = await getTabID();
-  return responseTabID;
-}
 
 // testMessage();
 class Background {
-  async sendDataToContent(tabID) {
-    await this.sendMessageToContentScript(tabID, {
-      user: await get_user(),
-      data: { test: "test" },
-    });
-  }
-  async sendMessageToContentScript(tabID, data = null) {
-    try {
-      const response = await chrome.tabs.sendMessage(tabID, { data });
-      console.log("response:", response);
-      return response;
-    } catch (error) {
-      console.error("sendMessageToContentScript error: ", error);
-      return null;
-    }
-  }
+  
   updateBadgeText() {
     chrome.storage.local.get("manga-list", (result) => {
       const filtered = result["manga-list"].filter((x) => !x.read);
@@ -105,6 +38,7 @@ class Background {
       }
       console.log("updateBadgeText", badgeText);
       chrome.action.setBadgeText({ text: String(badgeText) });
+      chrome.action.setBadgeBackgroundColor({ color: [30, 41, 101, 100] });
     });
   }
   init() {
