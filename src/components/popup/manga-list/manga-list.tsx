@@ -16,26 +16,37 @@ interface CheckedType {
 }
 export default function CheckboxList(props: listProps) {
     const [checked, setChecked] = useState<CheckedType[]>([]);
-    const [showAll, setShowAll] = useState(false);
+    const [showAll, setShowAll] = useState<boolean>();
     const [data, setData] = useState<Manga[]>([])
     const [totalData, setTotalData] = useState<Manga[]>([])
     const [refresh, setRefresh] = useState(false)
     const [addNew, setAddNew] = useState(false)
-
+    const [updated, setUpdated] = useState(false)
+    const [checkAll, setCheckAll] = useState(false)
+    const [deletePrompt, setDeletePrompt] = useState(false)
     useEffect(() => {
         chrome.storage.local.get('manga-list', (res) => {
             setTotalData(res['manga-list'])
-            const filteredData = res['manga-list'].filter((x: Manga) => !x.read)
-            if (filteredData.length === 0) {
-                setShowAll(true)
-            }
+            updateShowAll(res['manga-list'])
         })
+        sortData()
     }, [])
-    useEffect(() => {
-        if (!addNew) {
-            sortData()
+    const updateShowAll = (data: Manga[] = []) => {
+        if (!data) data = totalData
+        const filteredData = data.filter((x: Manga) => !x.read)
+        console.log('filtered data  print', filteredData)
+        if (filteredData.length === 0) {
+            setShowAll(true)
+        } else {
+            setShowAll(false)
         }
-    }, [refresh, showAll])
+    }
+    useEffect(() => {
+        // console.log('init data', showAll)
+        sortData()
+        console.log(data)
+    }, [showAll])
+
     useEffect(() => {
         chrome.storage.local.get('manga-list', (res) => {
             const mangalist = res['manga-list']
@@ -49,7 +60,7 @@ export default function CheckboxList(props: listProps) {
             )
             if (updated) {
                 chrome.storage.local.set({ 'manga-list': mangalist })
-                // updateDatabase('update', mangalist)
+                updateDatabase('update', mangalist)
                 sortData()
             }
         }
@@ -57,6 +68,7 @@ export default function CheckboxList(props: listProps) {
     }, [refresh])
     // const [data, setData] = useState(testData)
     const toggleAll = (b: boolean) => {
+        setCheckAll(!b)
         if (!b) {
             const mp = data.map((x, i) => {
                 return { [String(i)]: x['title'] }
@@ -66,11 +78,11 @@ export default function CheckboxList(props: listProps) {
             setChecked([])
         }
     }
-    chrome.storage.onChanged.addListener(() => {
-        setRefresh(!refresh)
-    })
+    // chrome.storage.onChanged.addListener(() => {
+    //     setRefresh(!refresh)
+    // })
     const handleToggle = (value: number, title: string) => () => {
-        // console.log(value)
+        console.log(value, title)
 
         const chkKeys: number[] = []
         checked.forEach((x: {}) => {
@@ -83,10 +95,12 @@ export default function CheckboxList(props: listProps) {
         } else {
             newChecked.splice(currentIndex, 1);
         }
-
         setChecked(newChecked);
     };
-    const handleDelete = (value = -1) => {
+    const handleDelete = () => {
+        setDeletePrompt(true)
+    };
+    const deleteChecked = (value = -1) => {
         let newData = [...totalData];
         console.log('del', value)
         console.log('search data', newData)
@@ -98,42 +112,51 @@ export default function CheckboxList(props: listProps) {
         };
         checked.forEach(x => {
             const chkTitle = Object.values(x)[0].toLowerCase().replace(/\s/g, '-')
-            console.log('chk title', chkTitle)
             newData = newData.filter((manga: Manga) => {
                 return manga.title !== chkTitle
             })
         })
+        setTotalData(newData)
         chrome.storage.local.set({ 'manga-list': newData })
         updateDatabase('update', newData)
-        setTotalData(newData)
-        setRefresh(!refresh)
-    };
+        sortData()
+        setDeletePrompt(false)
+    }
+
     const updateRead = (b: boolean) => {
-        console.log('update read', b)
-        const newData = [...data];
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             mangaList.forEach((manga: Manga, i: number) => {
-                for (let check in checked) {
-                    if (newData[parseInt(check)].title === manga['title']) {
+                const currentSource = manga['current_source']
+                for (let check of checked) {
+                    const checkTitle = Object.values(check)[0].toLowerCase().replace(/\s/g, '-')
+                    if (checkTitle === manga['title']) {
                         if (b) {
                             manga.read = true
                             manga.chapter = manga.latest
+                            manga.sources[currentSource]['chapter'] = manga.sources[currentSource]['latest']
                         }
                         else {
                             manga.read = false
                             manga.chapter = '1'
+                            manga.sources[currentSource]['chapter'] = '1'
                         }
                     }
                 }
             })
-            updateDatabase('update', mangaList)
+            console.log('manga set local storage list', mangaList)
+            setChecked([])
+            setCheckAll(false)
             chrome.storage.local.set({ 'manga-list': mangaList })
+            sortData()
+            updateShowAll(mangaList)
+            updateDatabase('update', mangaList)
         })
 
 
     }
     const updateDatabase = (type: string, data: Manga[]) => {
+        console.log('update database')
         chrome.runtime.sendMessage({ type: type, data: data }, (response) => {
             console.log(`${type} entry`, response)
         })
@@ -154,13 +177,16 @@ export default function CheckboxList(props: listProps) {
     }
 
     const sortData = () => {
+        console.log('showall', showAll)
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = sortByReleaseTime(res['manga-list'])
             try {
                 if (mangaList) {
                     setTotalData(mangaList)
                     if (!showAll) {
-                        setData(mangaList.filter((x: Manga) => !x.read))
+                        const filtered = mangaList.filter((x: Manga) => !x.read)
+                        setData(prev => filtered)
+                        console.log('mangalist', data)
                     } else {
                         setData(mangaList)
                     }
@@ -170,6 +196,7 @@ export default function CheckboxList(props: listProps) {
             }
         })
         setChecked([])
+
     }
     const sortByReleaseTime = (list: Manga[]) => {
         list.sort((a: Manga, b: Manga) => {
@@ -185,9 +212,13 @@ export default function CheckboxList(props: listProps) {
         })
         return list
     }
-    const filterData = (x: Manga[]) => {
-        setData(sortByReleaseTime(x))
-
+    const filterData = (x: Manga[], b: boolean) => {
+        if (b) {
+            setData(sortByReleaseTime(x))
+        }
+        else {
+            setData(x)
+        }
     }
     const addNewManga = (manga: Manga) => {
         chrome.storage.local.get('manga-list', (res) => {
@@ -210,34 +241,52 @@ export default function CheckboxList(props: listProps) {
                 console.log('already in list')
             } else {
                 mangaList.push(mObject)
-                updateDatabase('update', mangaList)
                 chrome.storage.local.set({ 'manga-list': mangaList })
+                updateDatabase('update', mangaList)
             }
-            const titleList = mangaList.map((x: Manga) => x.title)
-            setData(data.filter((x: Manga) => !titleList.includes(x.title)))
+            setUpdated(!updated)
         })
     }
-
+    useEffect(() => {
+        chrome.storage.local.get('manga-list', (res) => {
+            const mangaList = res['manga-list']
+            const titleList = mangaList.map((x: Manga) => x.title)
+            const newData = [...data].filter((x: Manga) => !titleList.includes(x['title'].toLowerCase().replace(/\s/g, '-')))
+            setData(newData)
+        })
+    }, [updated])
     return (
         <Container sx={{ maxWidth: '440px', padding: 0 }}>
             <BasicTabs updateRead={updateRead} showAll={showAll} checked={checked} handleDelete={handleDelete} handleClick={handleClick} totalData={totalData} />
-            {!addNew ? (
-                <>
-                    <MangaListItemControls data={data} toggleAll={toggleAll} showAll={showAll} filterData={filterData} />
-                    <List dense sx={{ width: '100%', padding: 0 }}>
-                        {data.map((value, key: number) => {
-                            return (
-                                <MListItem data={value} handleToggle={handleToggle} checked={checked} idx={key} />
-                            );
-                        })}
-                    </List >
-                </>
-            ) : (
-                <div className="trest">
-                    <MangaListItemControls filterData={filterData} allManga={props.allManga} />
-                    <SearchResults data={data} addNewManga={addNewManga} />
+            {/* {JSON.stringify({ showall: checkAll, an: data.length })} */}
+            {deletePrompt &&
+                <div>
+                    delete {checked.length} series
+                    <div>
+                        <button onClick={() => deleteChecked(-1)}>yes</button>
+                        <button onClick={() => setDeletePrompt(false)}>no</button>
+                    </div>
                 </div>
-            )}
+            }
+            {
+                !addNew ? (
+                    <>
+                        <MangaListItemControls data={data} toggleAll={toggleAll} showAll={showAll} filterData={filterData} checked={checkAll} deleting={deletePrompt} />
+                        <List dense sx={{ width: '100%', padding: 0 }}>
+                            {data.map((value, key: number) => {
+                                return (
+                                    <MListItem data={value} handleToggle={handleToggle} checked={checked} idx={key} />
+                                );
+                            })}
+                        </List >
+                    </>
+                ) : (
+                    <div className="trest">
+                        <MangaListItemControls filterData={filterData} allManga={props.allManga} updated={updated} />
+                        <SearchResults data={data} addNewManga={addNewManga} filterData={filterData} />
+                    </div>
+                )
+            }
         </Container >
     );
 }

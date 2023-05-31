@@ -17,7 +17,7 @@ function TabToggler(props: TabtogglerProps) {
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
     };
-    
+
     const filteredData = props.totalData.filter((x: Manga) => !x.read)
     return (
         <>
@@ -50,6 +50,8 @@ function TabToggler(props: TabtogglerProps) {
                         display: 'none',
                     },
                 }} >
+                    <Tab sx={{ color: '#fff !important' }} className='align-right' label="read" onClick={() => props.updateRead(true)} />
+                    <Tab sx={{ color: '#fff !important' }} className='align-right' label="un-read" onClick={() => props.updateRead(false)} />
                     <Tab sx={{ color: '#fff !important' }} label="Delete" onClick={() => props.handleDelete(-1)} />
                 </Tabs>
 

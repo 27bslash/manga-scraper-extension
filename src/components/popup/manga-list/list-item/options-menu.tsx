@@ -11,21 +11,27 @@ interface OptionsMenuProps {
     updateUrl: (key: string) => void,
 }
 export default function OptionsMenu(props: OptionsMenuProps) {
-    const [source, setSource] = useState(props.currentSource);
-
+    const [displaySource, setDisplaySource] = useState('');
     const handleChange = (event: SelectChangeEvent) => {
-        setSource(event.target.value as string);
+        setDisplaySource(event.target.value as string);
         props.updateUrl(event.target.value as string)
     };
     useEffect(() => {
         if (props.currentSource === 'any') {
             for (const k in props.sources) {
                 if (k !== 'any' && props.sources[k].latest_link === props.sources[props.currentSource].latest_link) {
-                    setSource(k)
+                    setDisplaySource(k)
                 }
             }
+        } else {
+            setDisplaySource(props.currentSource)
         }
     }, [props.currentSource, props.sources])
+    if (props.currentSource !== 'any') {
+        if (displaySource !== props.currentSource) {
+            // console.log(displaySource, props.currentSource, props.sources['any']['latest_link'],)
+        }
+    }
     return (
         <Box>
             <FormControl variant='standard'>
@@ -33,7 +39,7 @@ export default function OptionsMenu(props: OptionsMenuProps) {
                     disableUnderline
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
-                    value={source}
+                    value={displaySource}
                     label="Source"
                     onChange={handleChange}
                 >

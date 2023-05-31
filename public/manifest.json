@@ -1,7 +1,7 @@
 {
   "name": "Reddit Manga List",
   "description": "Scrapes manga from reddit then adds to reading list",
-  "version": "0.1",
+  "version": "0.1.8",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
@@ -21,7 +21,6 @@
         "*://realmscans.com/*",
         "*://comikey.com/*",
         "*://danke.moe/*",
-        "*://cubari.moe/*",
         "*://reader.kireicake.com/*",
         "*://setsuscans.com/*",
         "*://luminousscans.com/*",
@@ -37,17 +36,15 @@
         "*://leviatanscans.com/*",
         "*://onepiecechapters.com/*",
         "*://alpha-scans.org/*",
-        "*://sensescans.com/*"
+        "*://sensescans.com/*",
+        "*://cosmicscans.com/*"
       ],
       "run_at": "document_end",
       "js": ["static/js/content.js"],
       "css": ["App.css"]
     }
   ],
-  "permissions": [
-    "alarms",
-    "storage"
-  ],
+  "permissions": ["alarms", "storage"],
   "icons": {
     "16": "logo192.png",
     "48": "logo192.png",

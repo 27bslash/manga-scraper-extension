@@ -3,7 +3,7 @@ import Overlay from "./components/content/overlay";
 import './App.css'
 
 const App = () => {
-    return <Overlay />;
+    return <Overlay title='test'/>;
 };
 
 const app = document.createElement("div");

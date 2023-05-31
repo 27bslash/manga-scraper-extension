@@ -13,17 +13,18 @@ const Search = (props: any) => {
     let sorted: Manga[] = []
     let minLen = 3
     if (props.data) minLen = 0
-
     const initData = () => {
         if (props.data) {
 
             chrome.storage.local.get('manga-list', (res) => {
                 const mangaList = res['manga-list']
                 if (props.showAll) {
+                    console.log('full search')
                     setM(mangaList)
                 }
                 else {
-                    setM(m.filter((x: Manga) => !x.read))
+                    console.log('un read search')
+                    setM(mangaList.filter((x: Manga) => !x.read))
                 }
             })
             if (m) {
@@ -50,27 +51,52 @@ const Search = (props: any) => {
 
     }
     useEffect(() => {
+        // console.log('updateSearch')
         initData()
-    }, []);
+    }, [props.showAll, props.deleting]);
+
+    // initData()
+
+    // useEffect(() => {
+    //     console.log('update intidata')
+    //     initData()
+    // }, [props.updated])
+
+    // useEffect(() => {
+    //     console.log('showall initdata')
+    //     if (props.data) {
+    //         initData()
+    //     }
+    // }, [props.showAll])
+
+    // useEffect(() => {
+    //     console.log('all manga data')
+    //     if (props.allManga) {
+    //         initData()
+    //     }
+    // }, [props.allManga])
+
     useEffect(() => {
-        if (props.data) {
-            initData()
+        let b = false
+        if (props.data) b = true
+        if (value.length > 0 || props.data) {
+            props.filterData(sorted, b)
+        } else {
+            props.filterData([], false)
         }
-    }, [props.showAll])
-    useEffect(() => {
-        if (props.allManga) {
-            initData()
-        }
-    }, [props.allManga])
-    useEffect(() => {
-        props.filterData(sorted)
     }, [value])
+
     if (value.length > minLen) {
+        // console.log('sort', m)
         sorted = matchSorter(m.map((x: any) => {
             x.title = x.title.replace(/-/g, ' ')
             return x
         }), value, { keys: [{ threshold: matchSorter.rankings.CONTAINS, key: 'title' }] })
+    } else if (value.length === 0) {
+        sorted = m
     }
+    // console.log('sorted: ', sorted)
+
     return (
         <div className="search-container" style={{
             marginRight: 0,

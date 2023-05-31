@@ -5,23 +5,24 @@ import CloseIcon from '@mui/icons-material/Close';
 import DoneIcon from '@mui/icons-material/Done';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 
-interface Test {
-    any: string
-}
-const Overlay = () => {
+const Overlay = (props: { title: string }) => {
     const [data, setData] = useState<any>(extractTitle(document.title))
     useEffect(() => {
-        if (!(/\d+/.test(document.title))) {
-            setTimeout(() => {
-                const titleData = extractTitle(document.title)
-                if (titleData.chapter) {
-                    setData(titleData)
-                }
-            }, 5000)
-
+        if (props.title && !(/\d+/.test(document.title))) {
+            const titleData = extractTitle(document.title)
+            setData(titleData)
         }
-    }, [data])
-    console.log(data, document.title)
+        if (!(/\d+/.test(document.title)) && !data.domain.includes('chrome-extension')) {
+            const interval = setInterval(() => {
+                const titleData = extractTitle(document.title)
+                setData(titleData)
+                if (titleData.chapter) {
+                    console.log(titleData, 'title: ', document.title)
+                    clearInterval(interval)
+                }
+            }, 1000);
+        }
+    }, [props.title])
     const [showPrompt, setShowPrompt] = useState(true)
     const [confirmationPrompt, setConfirmationPrompt] = useState(false)
     const getLatest = (source: {
@@ -33,15 +34,16 @@ const Overlay = () => {
         };
     }, key: string, chapter: string) => {
         let timeUpdated = Date.now() / 1000;
-        if ('time_updated' in source[key]) {
+        console.log(source[key], source, key)
+        if (source[key] && 'time_updated' in source[key]) {
             timeUpdated = source[key].time_updated
         }
         if (source[key]) {
             if ('latest' in source[key]) {
-                return { 'url': data['link'], 'latest': source[key].latest, 'latest_link': source[key].latest_link || data['link'], time_updated: timeUpdated }
+                return { 'url': data['link'], 'latest': source[key].latest, 'chapter': chapter, 'latest_link': source[key].latest_link || data['link'], time_updated: timeUpdated }
             }
         }
-        return { 'url': data['link'], 'latest': chapter, 'latest_link': data['link'], time_updated: timeUpdated }
+        return { 'url': data['link'], 'latest': chapter, 'chapter': chapter, 'latest_link': data['link'], time_updated: timeUpdated }
     }
 
     useEffect(() => {
@@ -52,9 +54,10 @@ const Overlay = () => {
                     // update chapter
                     console.log('title is similar', x['title'])
                     setShowPrompt(false)
-                    if (data['chapter'] > x['chapter']) {
+                    if (data['chapter'] >= x['chapter']) {
                         console.log('update chapter')
                         x['chapter'] = data['chapter']
+                        x['scansite'] = data['scansite']
                         x['link'] = data['link']
                         if (!('sources' in x)) {
                             x['sources'] = {}
@@ -69,7 +72,7 @@ const Overlay = () => {
             })
         })
     }, [data]) // eslint-disable-line react-hooks/exhaustive-deps
-    // eslint-disable-line react-hooks/exhaustive-deps
+
     const updatePrompt = (b: boolean) => {
         setShowPrompt(b)
         setConfirmationPrompt(!b)
@@ -134,6 +137,7 @@ const Overlay = () => {
         }
 
     };
+
     const vertical = 'top';
     const horizontal = 'center';
     const action = (
@@ -245,20 +249,27 @@ const addNewManga = (data: any, updatePrompt: Function) => {
     }
     )
     updatePrompt(false)
+
 }
+
 const updateManga = (data: any, updatePrompt: Function) => {
     // console.log(url)
     chrome.storage.local.get('manga-list', (result) => {
         let list = result['manga-list']
         for (let i = 0; i < list.length; i++) {
             if (list[i]['title'] === data['title']) {
+                console.log('in db', list[i]['title'])
+                const currentSource = list[i]['current_source']
                 list[i] = data
+                list[i]['sources'][currentSource].url = data['link']
+                list[i]['sources'][currentSource].chapter = data['chapter']
+                console.log('list', list)
                 break
             }
         }
         chrome.storage.local.set({ 'manga-list': list })
         chrome.runtime.sendMessage({ type: 'update', data: list }, (response) => {
-            console.log('update', response)
+            console.log('updated')
         })
     })
     updatePrompt(false)
@@ -269,23 +280,30 @@ const extractTitle = (title: string) => {
     const scanRegex = /\w+\s?-?\w+$/gim;
     const chapterRegex = /(?<=episode\s|chapter\s|#|- |ep. )\d+\.?\d*/im;
     const cleanTitle = (title: string) => {
-        let seriesTitle = title.replace(scanRegex, '').trim();
+        let seriesTitle = title.replace(/’/g, "'").trim()
+        seriesTitle = seriesTitle.replace(/manhwa/gi, '')
+        seriesTitle = seriesTitle.replace(scanRegex, '').trim();
         seriesTitle = seriesTitle
             // remove chapter numbers
             .replace(chapterRegex, "")
             .replace(/chapter|episode/gi, "")
-        // remove special characters
-        const match = seriesTitle.match(/(?<=[-|:~] ).*(?=\W)/gmi)
+        // remove special character
+        const regex = /^\d.*(?<=[-|:~] )(.*)(?=\W)/gm;
+        const match = regex.exec(seriesTitle);
         if (match) {
-            if (match[0].match(/\w/gim)) {
-                seriesTitle = match[0]
-            }
+            seriesTitle = match[1];
         }
 
         seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "");
         seriesTitle = seriesTitle.replace(/\s?[-–]\s?/g, " ");
         seriesTitle = seriesTitle.trim().replace(/\s\s+.*/g, "");
         seriesTitle = seriesTitle.trim().replace(/\s/g, "-").toLowerCase();
+        // if (window.location.href.includes('webtoons')) {
+        //     const match = props.title.match(/\|.*/gim)
+        //     if (match) {
+        //         return match[0].replace('|', '').trim().toLowerCase().replace(' ', '-')
+        //     }
+        // }
         return seriesTitle
     }
     const scans = (title: string) => {

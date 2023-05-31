@@ -6,7 +6,9 @@ import Popup from './components/popup/popup';
 function App() {
     return (
         <div className="App">
-            <Popup />
+            <React.StrictMode>
+                <Popup />
+            </React.StrictMode >
         </div>
     );
 }

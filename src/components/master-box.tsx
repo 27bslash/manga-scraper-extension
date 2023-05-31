@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Checkbox from '@mui/material/Checkbox';
@@ -22,6 +22,11 @@ const theme = createTheme({
 
 const MasterBox = (props: any) => {
     const [checked, setChecked] = useState(false);
+    
+    useEffect(() => {
+        setChecked(props.checked)
+    }, [props.checked])
+
     const handleClick = () => {
         props.toggleAll(checked);
         setChecked(!checked);

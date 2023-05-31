@@ -15,6 +15,7 @@
     "@types/node": "^16.11.26",
     "@types/react": "^17.0.41",
     "@types/react-dom": "^17.0.14",
+    "javascript-time-ago": "^2.3.13",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "5.0.0",
@@ -23,7 +24,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "set INLINE_RUNTIME_CHUNK=false &&craco build",
+    "build": "set INLINE_RUNTIME_CHUNK=false && craco build",
+    "zip": "node buildPackage.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -48,6 +50,7 @@
   "devDependencies": {
     "@navikt/craco-plugins": "github:navikt/craco-plugins",
     "@types/chrome": "^0.0.180",
-    "deps": "^1.0.0"
+    "deps": "^1.0.0",
+    "match-sorter": "^6.3.1"
   }
 }
