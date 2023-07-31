@@ -18,6 +18,7 @@ const MListItem = (props: MListItemProps) => {
     props.data.title = props.data.title.replace(/\s/g, '-').toLowerCase()
     const title = capitalizeTitle(props.data.title)
     const [url, setUrl] = useState('');
+    const [currentUrl, setCurrentUrl] = useState('');
     const [latestUrl, setLatestUrl] = useState('');
     const [currentSource, setCurrentSource] = useState(props.data.current_source);
     const [chapter, setChapter] = useState('')
@@ -30,10 +31,10 @@ const MListItem = (props: MListItemProps) => {
 
     }, [props.data.current_source])
     const getLatestLink = () => {
+        const badSources = ['mangadex', 'reaperscans']
         chrome.storage.local.get('manga-list', (res) => {
             const mangaList = res['manga-list']
             const mangaListItem: Manga = mangaList.filter((res: Manga) => res.title === props.data.title)[0]
-            console.log(mangaListItem)
             // console.log('latestlink', props.data.title)
             const currSource = mangaListItem.current_source
             if (currSource !== currentSource) {
@@ -45,11 +46,12 @@ const MListItem = (props: MListItemProps) => {
             setLatestUrl(link)
             setLatest(mangaListItem.sources[currSource].latest)
             setScansite(mangaListItem['scansite'])
-            if (+mangaListItem.sources[currSource].latest - +chapterNum > 1 && currentSource !== 'mangadex') {
-                setUrl(link.replace(latest, String(+chapterNum + 1)))
+            setCurrentUrl(mangaListItem.sources[currSource].url || props.data.link)
+            if (checkUrl(link) && +mangaListItem.sources[currSource].latest - +chapterNum > 1 && !badSources.includes(currSource)) {
+                setUrl(link.replace(mangaListItem.sources[currSource].latest, String(+chapterNum + 1)))
             } else {
-                // console.log('notam', title)
                 setUrl(mangaListItem.sources[currSource].url || props.data.link)
+                // console.log('notam', title)
             }
         }
         )
@@ -94,7 +96,7 @@ const MListItem = (props: MListItemProps) => {
         } catch {
             console.log('%c error', 'color: red', props.data, currentSource)
         }
-    }, [currentSource])
+    }, [currentSource, props.data])
     const updateFu = () => {
 
     }
@@ -136,7 +138,7 @@ const MListItem = (props: MListItemProps) => {
                 </Grid>
                 <Grid item xs={2} sm={2} md={2}>
                     <p className='list-item-text' id='chapter-text' >
-                        <a href={url} rel='noreferrer' target='_blank'>
+                        <a href={currentUrl} rel='noreferrer' target='_blank'>
                             {chapter}
                         </a>
                         /
@@ -154,7 +156,23 @@ const MListItem = (props: MListItemProps) => {
         </Grid >
     )
 }
-
+const checkUrl = (targetUrl: string) => {
+    const manifest = chrome.runtime.getManifest()
+    const contentScripts = manifest.content_scripts
+    if (contentScripts) {
+        const urlMatches = contentScripts[0].matches
+        if (!urlMatches) {
+            console.log('manifest err')
+            return
+        }
+        const parsedUrls = urlMatches.map((x) => x.match(/\/\/.*(?=\/\*)/gm)![0])
+        if (!parsedUrls) {
+            return
+        }
+        const filteredUrls = parsedUrls.find((x: string) => targetUrl.includes(x[0]))
+        return filteredUrls
+    }
+}
 const capitalizeTitle = (title: string) => {
     // capitalize first letter of each word
     let split = ' '

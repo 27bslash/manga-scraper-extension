@@ -40,6 +40,10 @@ const Overlay = (props: { title: string }) => {
         }
         if (source[key]) {
             if ('latest' in source[key]) {
+                if (source[key].latest < chapter) {
+                    source[key].latest = chapter
+                    source[key].latest_link = data['link']
+                }
                 return { 'url': data['link'], 'latest': source[key].latest, 'chapter': chapter, 'latest_link': source[key].latest_link || data['link'], time_updated: timeUpdated }
             }
         }
@@ -54,7 +58,7 @@ const Overlay = (props: { title: string }) => {
                     // update chapter
                     console.log('title is similar', x['title'])
                     setShowPrompt(false)
-                    if (data['chapter'] >= x['chapter']) {
+                    if (data['chapter'] > x['chapter']) {
                         console.log('update chapter')
                         x['chapter'] = data['chapter']
                         x['scansite'] = data['scansite']
@@ -64,7 +68,7 @@ const Overlay = (props: { title: string }) => {
                         }
                         x['sources'][data['scansite']] = getLatest(x['sources'], data['scansite'], data['chapter'])
                         x['sources']['any'] = x['sources'][data['scansite']]
-                        x['read'] = +x['chapter'] >= +x['latest']
+                        x['read'] = x['chapter'] >= x['latest']
                         console.log('updated series info:', x)
                         updateManga(x, updatePrompt)
                     }
