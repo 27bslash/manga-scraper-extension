@@ -1,7 +1,7 @@
 {
   "name": "Reddit Manga List",
-  "description": "Scrapes manga from reddit then adds to reading list",
-  "version": "0.1.8",
+  "description": "Scrapes manga from reddit/r/manga and common scantalation sites and then adds to reading list",
+  "version": "0.1.96",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
@@ -14,6 +14,7 @@
     {
       "matches": [
         "*://www.asurascans.com/*",
+        "*://asura.gg/*",
         "*://slayerscans.com/*",
         "*://mangaplus.shueisha.co.jp/*",
         "*://mangasushi.net/*",
@@ -34,6 +35,7 @@
         "*://www.webtoons.com/*",
         "*://mm-scans.org/*",
         "*://leviatanscans.com/*",
+        "*://en.leviatanscans.com/*",
         "*://onepiecechapters.com/*",
         "*://alpha-scans.org/*",
         "*://sensescans.com/*",
