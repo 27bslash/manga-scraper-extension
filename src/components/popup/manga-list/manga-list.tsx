@@ -9,13 +9,13 @@ import MangaListItemControls from './manga-list-controls';
 import SearchResults from '../../search/searchResults';
 
 interface listProps {
-    allManga: Manga[]
+    allManga: Manga[] 
 }
 interface CheckedType {
     [key: string]: string
 }
 export default function CheckboxList(props: listProps) {
-    const [checked, setChecked] = useState<CheckedType[]>([]);
+    const [checked, setChecked] = useState<string[]>([]);
     const [showAll, setShowAll] = useState<boolean>();
     const [data, setData] = useState<Manga[]>([])
     const [totalData, setTotalData] = useState<Manga[]>([])
@@ -70,32 +70,22 @@ export default function CheckboxList(props: listProps) {
     const toggleAll = (b: boolean) => {
         setCheckAll(!b)
         if (!b) {
-            const mp = data.map((x, i) => {
-                return { [String(i)]: x['title'] }
-            })
-            setChecked(mp)
+            const allTItles = data.map((x, i) => x['title'])
+            setChecked(allTItles)
         } else {
             setChecked([])
         }
     }
-    // chrome.storage.onChanged.addListener(() => {
-    //     setRefresh(!refresh)
-    // })
-    const handleToggle = (value: number, title: string) => () => {
-        console.log(value, title)
 
-        const chkKeys: number[] = []
-        checked.forEach((x: {}) => {
-            chkKeys.push(+Object.keys(x)[0])
-        })
-        const currentIndex = chkKeys.indexOf(value);
-        const newChecked = [...checked];
-        if (currentIndex === -1) {
-            newChecked.push({ [String(value)]: title });
+    const handleToggle = (value: number, title: string) => {
+        let chkKeys = [...checked]
+        const idx = checked.findIndex((x) => x === title)
+        if (idx === -1) {
+            chkKeys.push(title)
         } else {
-            newChecked.splice(currentIndex, 1);
+            chkKeys.splice(idx, 1)
         }
-        setChecked(newChecked);
+        setChecked(chkKeys)
     };
     const handleDelete = () => {
         setDeletePrompt(true)
@@ -110,12 +100,7 @@ export default function CheckboxList(props: listProps) {
             setChecked([])
             return
         };
-        checked.forEach(x => {
-            const chkTitle = Object.values(x)[0].toLowerCase().replace(/\s/g, '-')
-            newData = newData.filter((manga: Manga) => {
-                return manga.title !== chkTitle
-            })
-        })
+        newData = newData.filter((manga: Manga) => !checked.includes(manga['title']))
         setTotalData(newData)
         chrome.storage.local.set({ 'manga-list': newData })
         updateDatabase('update', newData)
@@ -129,7 +114,7 @@ export default function CheckboxList(props: listProps) {
             mangaList.forEach((manga: Manga, i: number) => {
                 const currentSource = manga['current_source']
                 for (let check of checked) {
-                    const checkTitle = Object.values(check)[0].toLowerCase().replace(/\s/g, '-')
+                    const checkTitle = check.toLowerCase().replace(/\s/g, '-')
                     if (checkTitle === manga['title']) {
                         if (b) {
                             manga.read = true
