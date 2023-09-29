@@ -5,6 +5,7 @@ import Manga from '../../../../types/manga';
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en.json'
 import Checkboxbutton from './../../buttons/checkboxButton';
+import { GridItem } from "./gridItem";
 TimeAgo.addDefaultLocale(en)
 
 interface MListItemProps {
@@ -25,6 +26,7 @@ const MListItem = (props: MListItemProps) => {
     const [latest, setLatest] = useState(props.data.latest);
     const [timeAgo, setTimeAgo] = useState('')
     const [scansite, setScansite] = useState('')
+    const [updateReadStatus, setUpdateReadStatus] = useState(false)
     useEffect(() => {
         setCurrentSource(props.data.current_source)
 
@@ -101,21 +103,7 @@ const MListItem = (props: MListItemProps) => {
 
     }
     // console.log('mlist current source', currentSource)
-    const updateRead = () => {
-        chrome.storage.local.get('manga-list', (res) => {
-            res['manga-list'].forEach((element: Manga) => {
-                if (element.title === props.data.title) {
-                    element.read = true
-                    element.chapter = element.latest
-                    element.sources[currentSource]['chapter'] = element.sources[currentSource]['latest']
-                }
-            })
-            chrome.storage.local.set({ 'manga-list': res['manga-list'] }, () => {
-                console.log('updated')
-            })
-            chrome.runtime.sendMessage({ type: 'update', data: res['manga-list'] })
-        })
-    }
+
     return (
         <Grid className="manga-updater-list-item" key={props.idx} sx={{ borderBottom: 1, borderColor: 'primary.main' }} container rowSpacing={0} columnSpacing={{ md: 4 }}>
             <ListItem
@@ -127,36 +115,28 @@ const MListItem = (props: MListItemProps) => {
                 disablePadding={true}
             >
                 <Grid item xs={2} sm={2} md={2}>
-                    <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} title={title} />
+                    <Checkboxbutton checked={props.checked} handleToggle={props.handleToggle} idx={props.idx} title={props.data.title} />
                 </Grid>
-                <Grid item xs={5} sm={5} md={5}>
-                    {+latest - +props.data['chapter'] <= 1 ? (
-                        <TitleElement url={latestUrl} updateRead={updateRead} title={title} />
-                    ) : (
-                        <TitleElement url={url} updateRead={updateRead} title={title} source={scansite} />
-                    )}
-                </Grid>
-                <Grid item xs={2} sm={2} md={2}>
-                    <p className='list-item-text' id='chapter-text' >
-                        <a href={currentUrl} rel='noreferrer' target='_blank'>
-                            {chapter}
-                        </a>
-                        /
-                        <a href={latestUrl} rel='noreferrer' target='_blank' onClick={() => updateRead()}>
-                            {latest || 100}
-                        </a>
-                    </p>
-                    <p className="text-small">{timeAgo}</p>
-                </Grid>
-                <Grid item xs={3} sm={3} md={3}>
-                    <OptionsMenu currentSource={currentSource} sources={props.data.sources} updateUrl={updateUrl} />
-                </Grid>
+                <GridItem
+                    title={props.data.title}
+                    currentSource={currentSource}
+                    latest={latest}
+                    url={url}
+                    updateReadStatus={updateReadStatus}
+                    scansite={scansite}
+                    currentUrl={currentUrl}
+                    timeAgo={timeAgo}
+                    chapter={chapter}
+                    latestUrl={latestUrl}
+                    sources={props.data.sources}
+                    updateUrl={updateUrl}
+                ></GridItem>
             </ListItem>
             <Divider light />
         </Grid >
     )
 }
-const checkUrl = (targetUrl: string) => {
+const checkUrlInManifest = (targetUrl: string) => {
     const manifest = chrome.runtime.getManifest()
     const contentScripts = manifest.content_scripts
     if (contentScripts) {
@@ -169,72 +149,9 @@ const checkUrl = (targetUrl: string) => {
         if (!parsedUrls) {
             return
         }
-        const filteredUrls = parsedUrls.find((x: string) => targetUrl.includes(x[0]))
+        const filteredUrls = parsedUrls.find((x: string) => targetUrl.includes(x))
         return filteredUrls
     }
 }
-const capitalizeTitle = (title: string) => {
-    // capitalize first letter of each word
-    let split = ' '
-    if (title.includes('-')) {
-        split = '-'
-    }
-    return title.split(split).map((word: string, i: number) => {
-        if (i === 0 && !(/^(.)\1+$/.test(word))) {
-            return word.charAt(0).toUpperCase() + word.slice(1)
-        }
-        else if (/^(.)\1+$/.test(word)) {
-            // if word is all the same character
-            return word.toUpperCase()
-        }
-        else if (word !== 'of' && word !== 'a') {
-            return word.charAt(0).toUpperCase() + word.slice(1)
-        }
-        else {
-            return word
-        }
-    })
-        .join(' ')
-};
 
-const TitleElement = (props: { url: string; updateRead: () => void; title: string, source?: string }) => {
-    const sources = [
-        "asurascans",
-        "slayerscans",
-        "mangaplus",
-        "mangasushi",
-        "kouhai",
-        "realmscans",
-        "comikey",
-        "danke.moe",
-        "kireicake",
-        "setsuscans",
-        "luminousscans",
-        "reaperscans",
-        "mangadex",
-        "dynasty-scans",
-        "guya.moe",
-        "flamescans",
-        "viewer.heros-web",
-        "gdstmp.site",
-        "webtoons",
-        "mm-scans",
-        "leviatanscans",
-        "onepiecechapters",
-        "alpha-scans",
-        "sensescans",
-        "cosmicscans"
-    ]
-
-    const handleClick = () => {
-        if (!props.source || !sources.includes(props.source)) {
-            props.updateRead()
-        }
-    }
-    return (
-        <a href={props.url} rel='noreferrer' target='_blank' onClick={() => handleClick()}>
-            <p className="series-title">{capitalizeTitle(props.title)}</p>
-        </a>
-    )
-}
 export default MListItem
