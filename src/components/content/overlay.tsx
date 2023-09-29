@@ -6,6 +6,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 
 const Overlay = (props: { title: string }) => {
+    console.log('running manga extension', props.title, document.title)
     const [data, setData] = useState<any>(extractTitle(document.title))
     useEffect(() => {
         if (props.title && !(/\d+/.test(document.title))) {
@@ -32,22 +33,25 @@ const Overlay = (props: { title: string }) => {
             latest_link: string,
             time_updated: number;
         };
-    }, key: string, chapter: string) => {
+    }, scansite: string, chapter: string) => {
         let timeUpdated = Date.now() / 1000;
-        console.log(source[key], source, key)
-        if (source[key] && 'time_updated' in source[key]) {
-            timeUpdated = source[key].time_updated
+        console.log(source[scansite], source, scansite)
+        if (source[scansite] && 'time_updated' in source[scansite]) {
+            timeUpdated = source[scansite].time_updated
         }
-        if (source[key]) {
-            if ('latest' in source[key]) {
-                if (source[key].latest < chapter) {
-                    source[key].latest = chapter
-                    source[key].latest_link = data['link']
+        if (source[scansite]) {
+            if ('latest' in source[scansite]) {
+                if (source[scansite].latest < chapter) {
+                    source[scansite].latest = chapter
+                    source[scansite].latest_link = data['link']
                 }
-                return { 'url': data['link'], 'latest': source[key].latest, 'chapter': chapter, 'latest_link': source[key].latest_link || data['link'], time_updated: timeUpdated }
+                return {
+                    'url': data['link'], 'latest': source[scansite].latest, 'chapter': chapter,
+                    'latest_link': source[scansite].latest_link || data['link'], time_updated: timeUpdated, old_chapters: {}
+                }
             }
         }
-        return { 'url': data['link'], 'latest': chapter, 'chapter': chapter, 'latest_link': data['link'], time_updated: timeUpdated }
+        return { 'url': data['link'], 'latest': chapter, 'chapter': chapter, 'latest_link': data['link'], time_updated: timeUpdated, old_chapters: {} }
     }
 
     useEffect(() => {
@@ -63,7 +67,7 @@ const Overlay = (props: { title: string }) => {
                         x['chapter'] = data['chapter']
                         x['scansite'] = data['scansite']
                         x['link'] = data['link']
-                        if (!('sources' in x)) {
+                        if (!x['sources']) {
                             x['sources'] = {}
                         }
                         x['sources'][data['scansite']] = getLatest(x['sources'], data['scansite'], data['chapter'])
@@ -240,7 +244,7 @@ const titleSimilarity = (title: string, manga: Manga) => {
     // console.log('similarity: ', similarity / len, title)
     return similarity / len >= 0.75
 }
-const addNewManga = (data: any, updatePrompt: Function) => {
+const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
     chrome.storage.local.get('blacklist', (result) => {
         const blacklist = result['blacklist']
         const filtered = blacklist.filter((x: any) => x['title'] !== data['title']);
