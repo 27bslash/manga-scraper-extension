@@ -53,28 +53,7 @@ const Search = (props: any) => {
     useEffect(() => {
         // console.log('updateSearch')
         initData()
-    }, [props.showAll, props.deleting]);
-
-    // initData()
-
-    // useEffect(() => {
-    //     console.log('update intidata')
-    //     initData()
-    // }, [props.updated])
-
-    // useEffect(() => {
-    //     console.log('showall initdata')
-    //     if (props.data) {
-    //         initData()
-    //     }
-    // }, [props.showAll])
-
-    // useEffect(() => {
-    //     console.log('all manga data')
-    //     if (props.allManga) {
-    //         initData()
-    //     }
-    // }, [props.allManga])
+    }, [props.showAll, props.deleting, props.allManga]);
 
     useEffect(() => {
         let b = false
