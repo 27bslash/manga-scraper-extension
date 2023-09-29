@@ -12,12 +12,11 @@ interface MListItemProps {
     data: Manga
     idx: number,
     checked: any,
-    handleToggle: Function,
+    handleToggle: (value: number, title: string) => void,
 }
 const MListItem = (props: MListItemProps) => {
     // const [props.editing, setEditing] = useState(true)
     props.data.title = props.data.title.replace(/\s/g, '-').toLowerCase()
-    const title = capitalizeTitle(props.data.title)
     const [url, setUrl] = useState('');
     const [currentUrl, setCurrentUrl] = useState('');
     const [latestUrl, setLatestUrl] = useState('');
@@ -42,17 +41,36 @@ const MListItem = (props: MListItemProps) => {
             if (currSource !== currentSource) {
                 // console.log(currSource, currentSource, title)
             }
-            const link = mangaListItem.sources[currSource].latest_link
+            let link = mangaListItem.sources[currSource].latest_link
             const chapterNum = mangaListItem.sources[currSource].chapter || props.data.chapter
+            const old_chapters = mangaListItem['sources'][currSource].old_chapters
             setChapter(chapterNum)
             setLatestUrl(link)
             setLatest(mangaListItem.sources[currSource].latest)
             setScansite(mangaListItem['scansite'])
             setCurrentUrl(mangaListItem.sources[currSource].url || props.data.link)
-            if (checkUrl(link) && +mangaListItem.sources[currSource].latest - +chapterNum > 1 && !badSources.includes(currSource)) {
-                setUrl(link.replace(mangaListItem.sources[currSource].latest, String(+chapterNum + 1)))
+
+
+            if (checkUrlInManifest(link) && +mangaListItem.sources[currSource].latest - +chapterNum > 1 && !badSources.includes(currSource)) {
+                if (mangaListItem['scansite'] === 'asurascans') {
+                    // removes the id part of the link 
+                    // https://asuracomics.com/6429950787-{mangaTitle}-chapter-94/
+                    // https://asuracomics.com/{mangaTitle}-chapter-94/
+                    link = link.replace(/\d*(?=\d-)\d-/, '')
+                }
+                if (old_chapters &&
+                    Object.keys(old_chapters).length) {
+                    setUrl(old_chapters[String(+chapterNum + 1)]['latest_link'])
+                } else {
+                    setUrl(link.replace(mangaListItem.sources[currSource].latest, String(+chapterNum + 1)))
+                }
+            } else if (!checkUrlInManifest(link)) {
+                console.log('not in manifest', link, chapterNum)
+                setUpdateReadStatus(true)
+                setUrl(mangaListItem.sources[currSource].latest_link || props.data.link)
             } else {
-                setUrl(mangaListItem.sources[currSource].url || props.data.link)
+                setUpdateReadStatus(true)
+                setUrl(mangaListItem.sources[currSource].latest_link || props.data.link)
                 // console.log('notam', title)
             }
         }
