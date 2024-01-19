@@ -32,6 +32,7 @@ export const GridItem = (props: gridItemProps) => {
                 console.log('updated')
             })
             chrome.runtime.sendMessage({ type: 'update', data: res['manga-list'] })
+            chrome.runtime.sendMessage({ type: 'linkClicked' })
         })
     }
     return (

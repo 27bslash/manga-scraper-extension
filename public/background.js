@@ -46,6 +46,7 @@ class Background {
     console.log("first signal", this.signal);
     this.updateStorage();
     this.updateBadgeText();
+    this.showOverlay = true;
 
     chrome.storage.onChanged.addListener(() => {
       console.log("storage changed");
@@ -61,6 +62,12 @@ class Background {
     console.log("inited");
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const type = request.type;
+      if (type === "linkClicked") {
+        return (this.showOverlay = false);
+      }
+      if (request.type === "checkOverlay") {
+        return sendResponse({ showOverlay: this.showOverlay });
+      }
       (async () => {
         const response = await this.postData(request.type, request.data);
         console.log("response", response);
@@ -97,7 +104,7 @@ class Background {
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.signal.addEventListener("abort", () => console.log("2nd listener"));
-    
+
     const url = `https://27bslash.eu.pythonanywhere.com/db/manga-list/${method}/${user}`;
     data = JSON.stringify(data);
     const response = await fetch(url, {

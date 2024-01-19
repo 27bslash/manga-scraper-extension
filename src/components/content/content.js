@@ -1,9 +1,9 @@
 import ReactDOM from "react-dom";
 import Overlay from "./overlay";
 import { useState, useEffect } from "react";
-
 const App = () => {
   const [title, setTitle] = useState("");
+  console.log("app");
   const callback = (mutationList, observer) => {
     for (const mutation of mutationList) {
       if (mutation.type === "childList") {
@@ -26,7 +26,6 @@ const App = () => {
   useEffect(() => {
     addObserver();
   }, []);
-
   return <Overlay title={title}></Overlay>;
 };
 

@@ -1,7 +1,7 @@
 {
   "name": "Reddit Manga List",
   "description": "Scrapes manga from reddit/r/manga and common scantalation sites and then adds to reading list",
-  "version": "0.1.99",
+  "version": "0.3",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
@@ -19,6 +19,11 @@
         "*://asuracomics.ru/*",
         "*://asuracomics.xyz/*",
         "*://asuracomics.nacm.xyz/*",
+        "*://asuratoon.com/*",
+        "*://asuratoon.gg/*",
+        "*://asuratoon.ru/*",
+        "*://asuratoon.xyz/*",
+        "*://asuratoon.nacm.xyz/*",
         "*://asura.gg/*",
         "*://asura.nacm.xyz/*",
         "*://slayerscans.com/*",

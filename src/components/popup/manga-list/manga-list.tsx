@@ -9,7 +9,7 @@ import MangaListItemControls from './manga-list-controls';
 import SearchResults from '../../search/searchResults';
 
 interface listProps {
-    allManga: Manga[] 
+    allManga: Manga[]
 }
 interface CheckedType {
     [key: string]: string
@@ -266,10 +266,10 @@ export default function CheckboxList(props: listProps) {
                         </List >
                     </>
                 ) : (
-                    <div className="trest">
+                    <>
                         <MangaListItemControls filterData={filterData} allManga={props.allManga} updated={updated} />
                         <SearchResults data={data} addNewManga={addNewManga} filterData={filterData} />
-                    </div>
+                    </>
                 )
             }
         </Container >

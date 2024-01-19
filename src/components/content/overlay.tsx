@@ -8,6 +8,13 @@ import ClickAwayListener from '@mui/material/ClickAwayListener';
 const Overlay = (props: { title: string }) => {
     console.log('running manga extension', props.title, document.title)
     const [data, setData] = useState<any>(extractTitle(document.title))
+    const [showPopup, setShowPopup] = useState(true)
+    useEffect(() => {
+        chrome.runtime.sendMessage({ type: "checkOverlay" }, (response) => {
+            setShowPopup(response.showOverlay)
+        })
+    }, [])
+
     useEffect(() => {
         if (props.title && !(/\d+/.test(document.title))) {
             const titleData = extractTitle(document.title)
@@ -170,7 +177,8 @@ const Overlay = (props: { title: string }) => {
     const checkOpen = () => {
         chrome.storage.local.get('blacklist', (result) => {
             const blacklist = result['blacklist']
-            const filtered = blacklist.filter((x: any) => x['title'] === data['title'] && data['chapter'] - 5 <= +x['chapter']);
+            const filtered = blacklist.filter((x: any) => x['title'] === data['title'] && data['chapter'] - 5 <= +x['chapter']
+                && data['chapter'] !== +x['latest']);
             if (filtered && filtered.length > 0) {
                 setOpen(false)
                 return false
@@ -189,7 +197,7 @@ const Overlay = (props: { title: string }) => {
     return (
         <div className="manga-overlay">
 
-            {+data['chapter'] > 10 && showPrompt && checkOpen() && (
+            {+data['chapter'] > 10 && showPrompt && checkOpen() && showPopup && (
                 <Snackbar
                     open={open}
                     onClose={handleClose}
