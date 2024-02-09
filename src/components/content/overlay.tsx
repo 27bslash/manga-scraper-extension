@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import Manga from './../../types/manga';
-import { IconButton, Snackbar, SnackbarContent } from "@mui/material"
+import { IconButton, Snackbar } from "@mui/material"
 import CloseIcon from '@mui/icons-material/Close';
 import DoneIcon from '@mui/icons-material/Done';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
+import { CustomSnackBar } from './snackBar';
+import { extractTitle } from './parseTitle';
 
 const Overlay = (props: { title: string }) => {
     console.log('running manga extension', props.title, document.title)
@@ -93,19 +95,39 @@ const Overlay = (props: { title: string }) => {
         setConfirmationPrompt(!b)
     }
     const [open, setOpen] = useState(true);
+    useEffect(() => {
+        chrome.storage.local.get('blacklist', (result) => {
+            let blacklist = result['blacklist'] || []
+            const foundManga = blacklist.find((x: any) =>
+                x['title'] === data['title']
+            );
+            if (data['chapter'] - 5 >= +foundManga['chapter']) {
+                console.log('title in blacklist', data['title'], foundManga)
+                blacklist = blacklist.filter((manga: Manga) => manga['title'] !== data['title'])
+                chrome.storage.local.set({ 'blacklist': blacklist }, () => {
+                    setOpen(true)
+                })
+            }
+        })
+    }, [data]);
     const addToBlackList = (title: string) => {
-        console.log('add to black list: ', title)
         chrome.storage.local.get('blacklist', (result) => {
             if (!result['blacklist']) {
                 result['blacklist'] = []
             }
-            const blacklist: [{ 'title': string, 'chapter': string }] = result['blacklist']
-            const filtered = blacklist.filter((x: any) =>
+            let blacklist: { 'title': string, 'chapter': string }[] = result['blacklist']
+            const foundManga = blacklist.find((x: any) =>
                 x['title'] === data['title']
             );
-            if (filtered.length === 0) {
+            console.log('blacklist', blacklist, foundManga)
+            if (!foundManga) {
+                console.log('add to black list: ', title)
                 blacklist.push({ title: title, chapter: data['chapter'] })
             }
+            // else if (foundManga && data['chapter'] - 5 >= +foundManga['chapter']) {
+            //     console.log('title in blacklist', data['title'], foundManga)
+            //     blacklist = blacklist.filter((manga) => manga['title'] !== data['title'])
+            // }
             chrome.storage.local.set({ 'blacklist': blacklist }, () => {
                 setOpen(false)
             })
@@ -153,27 +175,6 @@ const Overlay = (props: { title: string }) => {
 
     };
 
-    const vertical = 'top';
-    const horizontal = 'center';
-    const action = (
-        <>
-            <IconButton
-                aria-label="open"
-                onClick={handleClose}
-
-            >
-                <DoneIcon color='secondary' fontSize='medium' className='add-icon-mu' />
-            </IconButton>
-            <IconButton
-                size="small"
-                aria-label="close"
-                color="inherit"
-                onClick={handleClose}
-            >
-                <CloseIcon color='secondary' fontSize="medium" className='close-icon-mu' />
-            </IconButton>
-        </>
-    );
     const checkOpen = () => {
         chrome.storage.local.get('blacklist', (result) => {
             const blacklist = result['blacklist']
@@ -182,11 +183,8 @@ const Overlay = (props: { title: string }) => {
             if (filtered && filtered.length > 0) {
                 setOpen(false)
                 return false
-            } else {
-                return true
             }
-        }
-        )
+        })
         return true
     }
     const handleClickAway = () => {
@@ -196,28 +194,10 @@ const Overlay = (props: { title: string }) => {
 
     return (
         <div className="manga-overlay">
-
-            {+data['chapter'] > 10 && showPrompt && checkOpen() && showPopup && (
-                <Snackbar
-                    open={open}
-                    onClose={handleClose}
-                    anchorOrigin={{ vertical, horizontal }}
-                >
-                    <SnackbarContent
-                        message="Start Reading? "
-                        action={action}
-                        sx={{
-                            display: 'grid', minWidth: '100px !important', textAlign: 'center',
-                            ".MuiSnackbarContent-action": {
-                                paddingLeft: '0',
-                                display: 'block',
-                                marginLeft: '0',
-                                marginRight: '0',
-                            }
-                        }}
-                    />
-                </Snackbar>
-            )}
+            {+data['chapter'] > 10 && showPrompt && checkOpen() && showPopup &&
+                // <CustomSnackBar open={open} handleClose={handleClose}>
+                <CustomSnackBar open={open} handleClose={handleClose}></CustomSnackBar>
+            }
             {confirmationPrompt && (
                 <ClickAwayListener onClickAway={handleClickAway}>
                     <Snackbar
@@ -290,78 +270,7 @@ const updateManga = (data: any, updatePrompt: Function) => {
     })
     updatePrompt(false)
 }
-const extractTitle = (title: string) => {
-    let chapterNum = "",
-        scanSite = "";
-    const scanRegex = /\w+\s?-?\w+$/gim;
-    const chapterRegex = /(?<=episode\s|chapter\s|#|- |ep. )\d+\.?\d*/im;
-    const cleanTitle = (title: string) => {
-        let seriesTitle = title.replace(/’/g, "'").trim()
-        seriesTitle = seriesTitle.replace(/manhwa/gi, '')
-        seriesTitle = seriesTitle.replace(scanRegex, '').trim();
-        seriesTitle = seriesTitle
-            // remove chapter numbers
-            .replace(chapterRegex, "")
-            .replace(/chapter|episode/gi, "")
-        // remove special character
-        const regex = /^\d.*(?<=[-|:~] )(.*)(?=\W)/gm;
-        const match = regex.exec(seriesTitle);
-        if (match) {
-            seriesTitle = match[1];
-        }
 
-        seriesTitle = seriesTitle.replace(/:|\||\[#\]/gm, "");
-        seriesTitle = seriesTitle.replace(/\s?[-–]\s?/g, " ");
-        seriesTitle = seriesTitle.trim().replace(/\s\s+.*/g, "");
-        seriesTitle = seriesTitle.trim().replace(/\s/g, "-").toLowerCase();
-        // if (window.location.href.includes('webtoons')) {
-        //     const match = props.title.match(/\|.*/gim)
-        //     if (match) {
-        //         return match[0].replace('|', '').trim().toLowerCase().replace(' ', '-')
-        //     }
-        // }
-        return seriesTitle
-    }
-    const scans = (title: string) => {
-        if (window.location.href.includes('webtoons')) {
-            // webttons edge case
-            scanSite = "webtoons";
-        } else {
-            const match = title.match(scanRegex)
-            if (match) {
-                scanSite = match[0].replace(' ', '').replace('-', '').toLowerCase()
-            }
-        }
-    };
-    const getChapterNum = (title: string) => {
-        // get number after chapter then remove leading zeros
-        const match = title.match(chapterRegex);
-        if (match) {
-            chapterNum = match[0]
-        }
-
-        if (chapterNum) {
-            chapterNum = chapterNum !== '0' ? chapterNum.replace(/^0+/, "") : '0';
-        }
-    };
-    scans(title);
-    getChapterNum(title);
-    let seriesTitle = cleanTitle(title);
-    if (window.location.href.includes('webtoons')) {
-        const meta = document.head.querySelector('meta[name="keywords"]')
-        if (meta) {
-            const cont = meta.getAttribute('content')
-            if (cont) {
-                const split = cont.split(',')
-                seriesTitle = split[0].trim().replace(/\s/g, "-").toLowerCase()
-                chapterNum = split[1].trim()
-                scanSite = 'webtoons'
-            }
-
-        }
-    }
-    return { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href }
-};
 
 
 export default Overlay
