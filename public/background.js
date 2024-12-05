@@ -7,6 +7,9 @@ chrome.runtime.onInstalled.addListener((details) => {
     new Date();
     const id = String(Date.now());
     chrome.storage.local.set({ id: id });
+    chrome.storage.local.set({ "manga-list": [] });
+    chrome.storage.local.set({ blacklist: [] });
+
     fetch(
       `https://27bslash.eu.pythonanywhere.com/db/manga-list/create/${id}`
     ).then((res) => {
@@ -28,9 +31,14 @@ const get_user = async () => {
 class Background {
   updateBadgeText() {
     chrome.storage.local.get("manga-list", (result) => {
-      const filtered = result["manga-list"].filter((x) => !x.read);
-      console.log("filtered", filtered);
-      let badgeText = filtered.length;
+      let badgeText = "tet";
+      try {
+        const filtered = result["manga-list"].filter((x) => !x.read);
+        console.log("filtered", filtered);
+        badgeText = filtered.length;
+      } catch (error) {
+        badgeText = "";
+      }
       if (badgeText === 0) {
         badgeText = "";
       }
