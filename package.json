@@ -25,9 +25,14 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "set INLINE_RUNTIME_CHUNK=false && craco build",
-    "zip": "node buildPackage.js",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "build-firefox": "npm run move-firefox-manifest && npm run build && npm run zip && run zip source",
+    "build-chrome": "npm run move-chrome-manifest && npm run build && npm run zip",
+    "move-firefox-manifest": "node manifest\\firefox-manifest.js",
+    "move-chrome-manifest": "node manifest\\chrome-manifest.js",
+    "zip": "node manifest\\zip.js",
+    "zip-source": "powershell Compress-Archive -Force -Path ./src/* -DestinationPath source.zip"
   },
   "eslintConfig": {
     "extends": [
@@ -50,6 +55,7 @@
   "devDependencies": {
     "@navikt/craco-plugins": "github:navikt/craco-plugins",
     "@types/chrome": "^0.0.180",
+    "cross-zip": "^4.0.1",
     "deps": "^1.0.0",
     "match-sorter": "^6.3.1"
   }
