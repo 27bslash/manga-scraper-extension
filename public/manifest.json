@@ -1,11 +1,10 @@
 {
   "name": "Reddit Manga List",
   "description": "Scrapes manga from reddit/r/manga and common scantalation sites then adds to your reading list",
-  "version": "0.32",
+  "version": "0.39",
   "manifest_version": 3,
   "background": {
     "scripts": ["background.js"],
-    "persistent": true,
     "service_worker": "background.js"
   },
   "action": {
@@ -15,7 +14,6 @@
   "content_scripts": [
     {
       "matches": [
-        "*://www.asurascans.com/*",
         "*://asuracomic.net/*",
         "*://asuracomic.com/*",
         "*://asuracomic.ru/*",
@@ -66,6 +64,51 @@
     }
   ],
   "permissions": ["alarms", "storage"],
+  "host_permissions": [
+    "*://asuracomic.net/*",
+    "*://asuracomic.com/*",
+    "*://asuracomic.ru/*",
+    "*://asuracomic.gg/*",
+    "*://asuracomic.xyz/*",
+    "*://asuracomics.com/*",
+    "*://asuracomics.gg/*",
+    "*://asuracomics.ru/*",
+    "*://asuracomics.xyz/*",
+    "*://asuracomics.nacm.xyz/*",
+    "*://asuratoon.com/*",
+    "*://asuratoon.gg/*",
+    "*://asuratoon.ru/*",
+    "*://asuratoon.xyz/*",
+    "*://asuratoon.nacm.xyz/*",
+    "*://asura.gg/*",
+    "*://asura.nacm.xyz/*",
+    "*://slayerscans.com/*",
+    "*://mangaplus.shueisha.co.jp/*",
+    "*://mangasushi.net/*",
+    "*://kouhai.work/*",
+    "*://realmscans.com/*",
+    "*://comikey.com/*",
+    "*://danke.moe/*",
+    "*://reader.kireicake.com/*",
+    "*://setsuscans.com/*",
+    "*://luminousscans.com/*",
+    "*://reaperscans.com/*",
+    "*://mangadex.org/*",
+    "*://dynasty-scans.com/*",
+    "*://guya.moe/*",
+    "*://flamescans.org/*",
+    "*://viewer.heros-web.com/*",
+    "*://gdstmp.site/*",
+    "*://www.webtoons.com/*",
+    "*://mm-scans.org/*",
+    "*://leviatanscans.com/*",
+    "*://lscomic.com/*",
+    "*://en.leviatanscans.com/*",
+    "*://onepiecechapters.com/*",
+    "*://alpha-scans.org/*",
+    "*://sensescans.com/*",
+    "*://cosmicscans.com/*"
+  ],
   "icons": {
     "16": "logo192.png",
     "48": "logo192.png",

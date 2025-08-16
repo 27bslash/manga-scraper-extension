@@ -10,12 +10,6 @@ import { extractTitle } from "./parseTitle";
 const Overlay = (props: { title: string }) => {
   console.log("running manga extension", props.title, document.title);
   const [data, setData] = useState<any>(extractTitle(document.title));
-  const [showPopup, setShowPopup] = useState(true);
-  useEffect(() => {
-    chrome.runtime.sendMessage({ type: "checkOverlay" }, (response) => {
-      setShowPopup(response.showOverlay);
-    });
-  }, []);
 
   useEffect(() => {
     if (props.title && !/\d+/.test(document.title)) {
@@ -199,22 +193,23 @@ const Overlay = (props: { title: string }) => {
     }
   };
 
-  const checkOpen = () => {
+  const checkBlacklist = () => {
     chrome.storage.local.get("blacklist", (result) => {
       try {
         const blacklist = result["blacklist"];
-        const filtered = blacklist.filter(
+        const filteredBlacklist = blacklist.find(
           (x: any) =>
             x["title"] === data["title"] &&
             data["chapter"] - 5 <= +x["chapter"] &&
             data["chapter"] !== +x["latest"]
         );
-        if (filtered && filtered.length > 0) {
+        if (filteredBlacklist) {
           setOpen(false);
           return false;
         }
       } catch (error) {
-        setOpen(false);
+        console.error("error", error);
+        setOpen(true);
         return true;
       }
     });
@@ -224,10 +219,20 @@ const Overlay = (props: { title: string }) => {
     addNewManga(data, updatePrompt);
     setConfirmationPrompt(false);
   };
-
+  console.log(
+    "state",
+    "ch good: ",
+    +data["chapter"] > 10,
+    "prompt: ",
+    showPrompt,
+    open
+  );
+  useEffect(() => {
+    checkBlacklist();
+  }, []);
   return (
     <div className="manga-overlay">
-      {+data["chapter"] > 10 && showPrompt && checkOpen() && showPopup && (
+      {+data["chapter"] > 10 && showPrompt && (
         // <CustomSnackBar open={open} handleClose={handleClose}>
         <CustomSnackBar open={open} handleClose={handleClose}></CustomSnackBar>
       )}

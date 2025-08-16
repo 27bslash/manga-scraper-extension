@@ -1,129 +1,114 @@
 /* eslint-disable no-undef */
-chrome.runtime.onInstalled.addListener((details) => {
-  // generate unique id:
-  chrome.alarms.create("refresh", { periodInMinutes: 1 });
-  if (details.reason === "install") {
-    console.log("This is a first install!");
-    new Date();
-    const id = String(Date.now());
-    chrome.storage.local.set({ id: id });
-    chrome.storage.local.set({ "manga-list": [] });
-    chrome.storage.local.set({ blacklist: [] });
+chrome.alarms.create("refresh", { periodInMinutes: 1 });
 
-    fetch(
-      `https://27bslash.eu.pythonanywhere.com/db/manga-list/create/${id}`
-    ).then((res) => {
-      console.log("create", res);
-    });
+chrome.runtime.onInstalled.addListener((details) => {
+  chrome.alarms.create("refresh", { periodInMinutes: 1 });
+  if (details.temporary) {
+    console.log("This is a test install, skipping user initialization");
+    chrome.storage.local.set({ id: "test" });
+  }
+  if (details.reason === "install") {
+    console.log("This is a first install!", chrome.runtime.id);
+    initialiseNewUser();
+  }
+  updateStorage();
+});
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.create("refresh", { periodInMinutes: 1 });
+  console.log("Extension started");
+  updateStorage();
+});
+chrome.storage.onChanged.addListener(() => {
+  console.log("storage changed");
+  updateBadgeText();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  console.log("Alarm:", alarm.name);
+  if (alarm.name === "refresh") {
+    updateStorage();
   }
 });
 
-const get_user = async () => {
-  const p = new Promise((resolve, reject) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === "linkClicked") {
+    chrome.storage.local.set({ showOverlay: false });
+    return;
+  }
+
+  (async () => {
+    const response = await postData(request.type, request.data);
+    sendResponse({ [request.type]: response, data: request.data });
+  })();
+  return true;
+});
+
+function updateBadgeText() {
+  chrome.storage.local.get("manga-list", (result) => {
+    let badgeText = "0";
+    try {
+      const filtered = result["manga-list"].filter((x) => !x.read) || [];
+      badgeText = filtered.length ? String(filtered.length) : "";
+      console.log("Badge count:", badgeText);
+    } catch {
+      badgeText = "";
+    }
+    chrome.action.setBadgeText({ text: badgeText });
+    chrome.action.setBadgeBackgroundColor({ color: "#000000" });
+  });
+}
+
+async function updateStorage() {
+  const user = await getUser();
+  if (!user) return;
+  try {
+    const res = await fetch(
+      `https://27bslash.eu.pythonanywhere.com/db/manga-list/find/${user}`
+    );
+    const json = await res.json();
+    const mangaList = json?.document?.["manga-list"] || [];
+    chrome.storage.local.set({ "manga-list": mangaList });
+  } catch (error) {
+    console.error("Failed to fetch manga list:", error);
+  }
+}
+
+async function postData(method, data) {
+  console.log(method, data);
+  const user = await getUser();
+  if (!user) return null;
+  const url = `https://27bslash.eu.pythonanywhere.com/db/manga-list/${method}/${user}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(data),
+  });
+  return await response.json();
+}
+
+async function getUser() {
+  return new Promise((resolve) => {
     chrome.storage.local.get("id", (result) => {
-      resolve(result.id);
+      if (!result.id) {
+        initialiseNewUser();
+        resolve(null);
+      } else {
+        resolve(result.id);
+      }
     });
   });
-  return await p;
-};
-
-// testMessage();
-class Background {
-  updateBadgeText() {
-    chrome.storage.local.get("manga-list", (result) => {
-      let badgeText = "tet";
-      try {
-        const filtered = result["manga-list"].filter((x) => !x.read);
-        console.log("filtered", filtered);
-        badgeText = filtered.length;
-      } catch (error) {
-        badgeText = "";
-      }
-      if (badgeText === 0) {
-        badgeText = "";
-      }
-      console.log("updateBadgeText", badgeText);
-      chrome.action.setBadgeText({ text: String(badgeText) });
-      chrome.action.setBadgeBackgroundColor({ color: [30, 41, 101, 100] });
-    });
-  }
-  init() {
-    this.controller = new AbortController();
-    this.signal = this.controller.signal;
-    this.signal.addEventListener("abort", () => console.log("abort listener"));
-    console.log("first signal", this.signal);
-    this.updateStorage();
-    this.updateBadgeText();
-    this.showOverlay = true;
-
-    chrome.storage.onChanged.addListener(() => {
-      console.log("storage changed");
-      this.updateBadgeText();
-    });
-
-    chrome.alarms.onAlarm.addListener((alarm) => {
-      console.log(alarm.name); // refresh
-      this.updateStorage();
-      this.updateBadgeText();
-    });
-
-    console.log("inited");
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      const type = request.type;
-      if (type === "linkClicked") {
-        return (this.showOverlay = false);
-      }
-      if (request.type === "checkOverlay") {
-        return sendResponse({ showOverlay: this.showOverlay });
-      }
-      (async () => {
-        const response = await this.postData(request.type, request.data);
-        console.log("response", response);
-        sendResponse({ [type]: response, data: request.data });
-      })();
-      //   this.updateStorage();
-    });
-    this.updateBadgeText();
-  }
-  updateStorage = async () => {
-    const user = await get_user();
-
-    try {
-      console.log("2nd signal", this.signal);
-      const data = await fetch(
-        `https://27bslash.eu.pythonanywhere.com/db/manga-list/find/${user}`,
-        {
-          method: "get",
-          signal: this.signal,
-        }
-      );
-      const json = await data.json();
-      const mangaList = json["document"]["manga-list"];
-      console.log("this.updateStorage", mangaList.length);
-      chrome.storage.local.set({ "manga-list": mangaList });
-    } catch (error) {
-      console.log(error, "aborted request");
-    }
-  };
-  postData = async (method, data) => {
-    const user = await get_user();
-
-    this.controller.abort();
-    this.controller = new AbortController();
-    this.signal = this.controller.signal;
-    this.signal.addEventListener("abort", () => console.log("2nd listener"));
-
-    const url = `https://27bslash.eu.pythonanywhere.com/db/manga-list/${method}/${user}`;
-    data = JSON.stringify(data);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify(data),
-    });
-    const j = await response.json();
-    return j;
-  };
 }
-new Background().init();
+
+function initialiseNewUser() {
+  const id = String(Date.now());
+  chrome.storage.local.set({
+    id,
+    "manga-list": [],
+    blacklist: [],
+    showOverlay: true,
+  });
+  fetch(`https://27bslash.eu.pythonanywhere.com/db/manga-list/create/${id}`)
+    .then((res) => console.log("Created user on server:", res))
+    .catch((err) => console.error(err));
+}
+// web-ext run in build dir
