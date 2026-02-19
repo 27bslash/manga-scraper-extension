@@ -8,8 +8,10 @@ import { CustomSnackBar } from "./snackBar";
 import { extractTitle } from "./parseTitle";
 
 const Overlay = (props: { title: string }) => {
-  console.log("running manga extension", props.title, document.title);
+  //   console.log("running manga extension", props.title, document.title);
   const [data, setData] = useState<any>(extractTitle(document.title));
+  const [showPrompt, setShowPrompt] = useState(true);
+  const [confirmationPrompt, setConfirmationPrompt] = useState(false);
 
   useEffect(() => {
     if (props.title && !/\d+/.test(document.title)) {
@@ -30,8 +32,6 @@ const Overlay = (props: { title: string }) => {
       }, 1000);
     }
   }, [props.title]);
-  const [showPrompt, setShowPrompt] = useState(true);
-  const [confirmationPrompt, setConfirmationPrompt] = useState(false);
   const getLatest = (
     source: {
       [x: string]: {
@@ -99,7 +99,8 @@ const Overlay = (props: { title: string }) => {
             x["sources"]["any"] = x["sources"][data["scansite"]];
             x["read"] = x["chapter"] >= x["latest"];
             console.log("updated series info:", x);
-            updateManga(x, updatePrompt);
+            updateManga(x);
+            updatePrompt(false);
           }
         }
       });
@@ -112,11 +113,13 @@ const Overlay = (props: { title: string }) => {
   };
   const [open, setOpen] = useState(true);
   useEffect(() => {
+    if (!data) return;
     chrome.storage.local.get("blacklist", (result) => {
       let blacklist = result["blacklist"] || [];
       const foundManga = blacklist.find(
         (x: any) => x["title"] === data["title"]
       );
+      if (!foundManga) return;
       if (data["chapter"] - 5 >= +foundManga["chapter"]) {
         console.log("title in blacklist", data["title"], foundManga);
         blacklist = blacklist.filter(
@@ -185,11 +188,9 @@ const Overlay = (props: { title: string }) => {
       setOpen(false);
       addNewManga(data, updatePrompt);
       setConfirmationPrompt(false);
-      return;
     } else {
       setConfirmationPrompt(false);
       setOpen(false);
-      return;
     }
   };
 
@@ -219,14 +220,14 @@ const Overlay = (props: { title: string }) => {
     addNewManga(data, updatePrompt);
     setConfirmationPrompt(false);
   };
-  console.log(
-    "state",
-    "ch good: ",
-    +data["chapter"] > 10,
-    "prompt: ",
-    showPrompt,
-    open
-  );
+  //   console.log(
+  //     "state",
+  //     "ch good: ",
+  //     +data["chapter"] > 10,
+  //     "prompt: ",
+  //     showPrompt,
+  //     open
+  //   );
   useEffect(() => {
     checkBlacklist();
   }, []);
@@ -246,11 +247,9 @@ const Overlay = (props: { title: string }) => {
             autoHideDuration={3000}
             sx={{ textTransform: "capitalize", color: "secondary !important" }}
             action={
-              <>
-                <p onClick={handleClose} className="undo-button-mu">
-                  undo
-                </p>
-              </>
+              <p onClick={handleClose} className="undo-button-mu">
+                undo
+              </p>
             }
           />
         </ClickAwayListener>
@@ -260,11 +259,9 @@ const Overlay = (props: { title: string }) => {
 };
 const titleSimilarity = (title: string, manga: Manga) => {
   const titleWords = title.split("-");
+  if (!manga["title"]) return false;
   const mangaWords = manga["title"].split("-");
-  const len =
-    titleWords.length > mangaWords.length
-      ? titleWords.length
-      : mangaWords.length;
+  const len = Math.max(titleWords.length, mangaWords.length);
   let similarity = 0;
   titleWords.forEach((x) => {
     if (mangaWords.includes(x)) {
@@ -280,6 +277,7 @@ const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
     const filtered = blacklist.filter((x: any) => x["title"] !== data["title"]);
     chrome.storage.local.set({ blacklist: filtered || [] });
   });
+  console.log("adding new manga", data);
   chrome.runtime.sendMessage(
     {
       type: "insert",
@@ -292,7 +290,7 @@ const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
   updatePrompt(false);
 };
 
-const updateManga = (data: any, updatePrompt: Function) => {
+const updateManga = (data: any) => {
   // console.log(url)
   chrome.storage.local.get("manga-list", (result) => {
     let list = result["manga-list"];
@@ -312,7 +310,6 @@ const updateManga = (data: any, updatePrompt: Function) => {
       console.log("updated");
     });
   });
-  updatePrompt(false);
 };
 
 export default Overlay;
