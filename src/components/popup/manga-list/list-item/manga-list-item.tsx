@@ -8,7 +8,6 @@ import {
   ListItemIcon,
   Divider,
 } from "@mui/material";
-import OptionsMenu from "./options-menu";
 import Manga from "../../../../types/manga";
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en.json";
@@ -29,12 +28,11 @@ const MListItem = (props: MListItemProps) => {
   const [currentUrl, setCurrentUrl] = useState("");
   const [latestUrl, setLatestUrl] = useState("");
   const [currentSource, setCurrentSource] = useState(props.data.current_source);
-  const [chapter, setChapter] = useState("");
+  const [chapter, setChapter] = useState<number>();
   const [latest, setLatest] = useState(props.data.latest);
   const [timeAgo, setTimeAgo] = useState("");
   const [scansite, setScansite] = useState("");
   const [updateReadStatus, setUpdateReadStatus] = useState(false);
-
   useEffect(() => {
     const allSources = Object.keys(props.data.sources);
     if (props.data.current_source in allSources)
@@ -43,33 +41,53 @@ const MListItem = (props: MListItemProps) => {
       !allSources.includes(props.data.current_source) &&
       allSources.includes("any")
     ) {
+      console.log("DEFUALT TO ANY: ", props.data);
       setCurrentSource("any");
     } else {
-      setCurrentSource(allSources[0]);
+      if (props.data.title === "superhuman-era") {
+        console.log(
+          "set to first source",
+          props.data.current_source,
+          allSources
+        );
+      }
+      //   setCurrentSource("allSources[0]");
     }
   }, [props.data.current_source]);
   const getLatestLink = () => {
     const badSources = ["mangadex", "reaperscans"];
     chrome.storage.local.get("manga-list", (res) => {
       const mangaList = res["manga-list"];
-      const mangaListItem: Manga = mangaList.filter(
+      const mangaListItem: Manga = mangaList.find(
         (res: Manga) => res.title === props.data.title
-      )[0];
+      );
       // console.log('latestlink', props.data.title)
       const currSource = mangaListItem.current_source;
-      if (currSource !== currentSource) {
-        // console.log(currSource, currentSource, title)
-      }
+
       let link = mangaListItem.sources[currSource].latest_link;
+
       const chapterNum =
-        mangaListItem.sources[currSource].chapter || props.data.chapter;
+        +mangaListItem.sources[currSource].chapter || +mangaListItem.chapter;
       const old_chapters = mangaListItem["sources"][currSource].old_chapters;
-      setChapter(chapterNum);
+
+      if (chapterNum > +mangaListItem.sources[currSource].latest) {
+        console.log(
+          "set to latest",
+          props.data.title,
+          chapterNum,
+          mangaListItem.sources[currSource].latest
+        );
+        setChapter(+mangaListItem.sources[currSource].latest);
+      } else {
+        // console.log("title", props.data.title, chapterNum);
+        setChapter(chapterNum);
+      }
       setLatestUrl(link);
       setLatest(mangaListItem.sources[currSource].latest);
-      setScansite(mangaListItem["scansite"]);
-      setCurrentUrl(mangaListItem.sources[currSource].url || props.data.link);
-
+      setScansite(currSource);
+      setCurrentUrl(
+        mangaListItem.sources[currSource].latest_link || props.data.link
+      );
       if (
         checkUrlInManifest(link) &&
         +mangaListItem.sources[currSource].latest - +chapterNum > 1 &&
@@ -92,7 +110,7 @@ const MListItem = (props: MListItemProps) => {
           );
         }
       } else if (!checkUrlInManifest(link)) {
-        console.log("not in manifest", link, chapterNum);
+        // console.log("not in manifest", link, chapterNum);
         setUpdateReadStatus(true);
         setUrl(
           mangaListItem.sources[currSource].latest_link || props.data.link
@@ -110,15 +128,38 @@ const MListItem = (props: MListItemProps) => {
     getLatestLink();
   }, [props.data, currentSource]);
   // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
-
+  const fixMainChapter = (manga: Manga) => {
+    let highestSourceChapter = "0";
+    Object.keys(manga.sources).forEach((source) => {
+      if (+manga.sources[source].latest > +highestSourceChapter) {
+        highestSourceChapter = manga.sources[source].latest;
+        if (manga.sources[source].chapter) {
+          console.log(
+            "has chapter",
+            manga.title,
+            source,
+            manga.sources[source].chapter
+          );
+        }
+      }
+    });
+    // console.log(
+    //   "fix main chapter",
+    //   manga.title,
+    //   manga.chapter,
+    //   highestSourceChapter
+    // );
+    return highestSourceChapter;
+  };
   const updateUrl = (key: string) => {
-    // console.log(props.data.title, 'k', key, props.data.sources[key])
+    console.log(props.data.title, "k", key, props.data.sources[key]);
     chrome.storage.local.get("manga-list", (res) => {
       try {
         res["manga-list"].forEach((element: Manga) => {
           if (element.title === props.data.title) {
             // console.log('updated', props.data.title)
             element.current_source = key;
+            console.log("set current source", key, element);
             setCurrentSource(key);
           }
         });
@@ -143,8 +184,8 @@ const MListItem = (props: MListItemProps) => {
         currentTime - props.data["sources"][currentSource].time_updated;
       timeago = timeAgo.format(Date.now() - timeDelta * 1000);
       setTimeAgo(timeago);
-    } catch {
-      console.log("%c error", "color: red", props.data, currentSource);
+    } catch (error) {
+      console.log("%c error", "color: red", error, props.data, currentSource);
     }
   }, [currentSource, props.data]);
   const updateFu = () => {};
@@ -154,7 +195,7 @@ const MListItem = (props: MListItemProps) => {
     <Grid
       className="manga-updater-list-item"
       key={props.idx}
-      sx={{ borderBottom: 1, borderColor: "primary.main" }}
+      sx={{ borderBottom: 1, borderColor: "primary.main", display: "flex" }}
       container
       rowSpacing={0}
       columnSpacing={{ md: 4 }}
@@ -183,7 +224,7 @@ const MListItem = (props: MListItemProps) => {
           scansite={scansite}
           currentUrl={currentUrl}
           timeAgo={timeAgo}
-          chapter={chapter}
+          chapter={chapter!}
           latestUrl={latestUrl}
           sources={props.data.sources}
           updateUrl={updateUrl}
@@ -193,6 +234,7 @@ const MListItem = (props: MListItemProps) => {
     </Grid>
   );
 };
+
 const checkUrlInManifest = (targetUrl: string) => {
   const manifest = chrome.runtime.getManifest();
   const contentScripts = manifest.content_scripts;

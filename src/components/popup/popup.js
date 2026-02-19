@@ -9,7 +9,7 @@ function Popup() {
   useEffect(() => {
     (async () => {
       const res = await fetch(
-          "https://27bslash.eu.pythonanywhere.com/db/manga-list/all"
+          "https://kzw5xa1pt0.execute-api.us-east-1.amazonaws.com/dev/db/manga-list/all"
         ),
         data = await res.json();
       console.log("run once");
