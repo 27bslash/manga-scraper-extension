@@ -1,0 +1,53 @@
+name: Firefox Add-on Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-sign:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chrome-extension
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: chrome-extension/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Firefox extension
+        run: |
+          npm run move-firefox-manifest
+          npm run build
+
+      - name: Package source zip for signing
+        run: |
+          cd build
+          zip -r ../source.zip .
+
+      - name: Sign with AMO
+        run: npx web-ext sign --source-dir . --artifacts-dir web-ext-artifacts --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET"
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        working-directory: chrome-extension/build
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-signed-addon
+          path: |
+            chrome-extension/build/web-ext-artifacts/*.xpi
+            chrome-extension/source.zip
