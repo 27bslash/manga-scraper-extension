@@ -36,9 +36,11 @@ const Overlay = (props: { title: string }) => {
     source: {
       [x: string]: {
         url: string;
-        latest: string;
-        latest_link: string;
+        latest?: string;
+        latest_link?: string;
+        chapter?: string;
         time_updated: number;
+        old_chapters?: any;
       };
     },
     scansite: string,
@@ -50,26 +52,22 @@ const Overlay = (props: { title: string }) => {
       timeUpdated = source[scansite].time_updated;
     }
     if (source[scansite]) {
-      if ("latest" in source[scansite]) {
-        if (source[scansite].latest < chapter) {
-          source[scansite].latest = chapter;
-          source[scansite].latest_link = data["link"];
-        }
-        return {
-          url: data["link"],
-          latest: source[scansite].latest,
-          chapter: chapter,
-          latest_link: source[scansite].latest_link || data["link"],
-          time_updated: timeUpdated,
-          old_chapters: {},
-        };
-      }
+      return {
+        ...source[scansite],
+        url: data["link"],
+        latest: source[scansite].latest || source.any?.latest || chapter,
+        chapter: chapter,
+        latest_link:
+          source[scansite].latest_link || source.any?.latest_link || data["link"],
+        time_updated: timeUpdated,
+        old_chapters: source[scansite].old_chapters || {},
+      };
     }
     return {
       url: data["link"],
-      latest: chapter,
+      latest: source.any?.latest || chapter,
       chapter: chapter,
-      latest_link: data["link"],
+      latest_link: source.any?.latest_link || data["link"],
       time_updated: timeUpdated,
       old_chapters: {},
     };
@@ -201,8 +199,7 @@ const Overlay = (props: { title: string }) => {
         const filteredBlacklist = blacklist.find(
           (x: any) =>
             x["title"] === data["title"] &&
-            data["chapter"] - 5 <= +x["chapter"] &&
-            data["chapter"] !== +x["latest"]
+            data["chapter"] - 5 <= +x["chapter"]
         );
         if (filteredBlacklist) {
           setOpen(false);

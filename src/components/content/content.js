@@ -4,27 +4,35 @@ import { useState, useEffect } from "react";
 const App = () => {
   const [title, setTitle] = useState("");
   console.log("app");
-  const callback = (mutationList, observer) => {
+  const callback = (mutationList) => {
     for (const mutation of mutationList) {
-      if (mutation.type === "childList") {
+      if (
+        mutation.type === "childList" ||
+        mutation.type === "characterData"
+      ) {
         setTitle(document.title);
         break;
-        // console.log("A child node has been added or removed.");
       }
     }
   };
-  const observer = new MutationObserver(callback);
-  const addObserver = () => {
-    if (!document.querySelector("head")) {
-      window.setTimeout(addObserver, 500);
+  useEffect(() => {
+    setTitle(document.title);
+
+    const head = document.querySelector("head");
+    if (!head) {
+      return;
     }
-    observer.observe(document.querySelector("head"), {
+
+    const observer = new MutationObserver(callback);
+    observer.observe(head, {
       subtree: true,
       childList: true,
+      characterData: true,
     });
-  };
-  useEffect(() => {
-    addObserver();
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
   return <Overlay title={title}></Overlay>;
 };
