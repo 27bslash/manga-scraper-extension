@@ -3,7 +3,16 @@ import { ChangeCssFilename } from "./cs";
 
 module.exports = {
     webpack: {
-        configure: (webpackConfig: { output: any; optimization: any; }, { env, paths }: any) => {
+        configure: (webpackConfig: any, { env, paths }: any) => {
+            webpackConfig.plugins = webpackConfig.plugins.map((plugin: any) => {
+                if (plugin?.constructor?.name === "HtmlWebpackPlugin") {
+                    plugin.userOptions = {
+                        ...plugin.userOptions,
+                        chunks: ["popup"],
+                    };
+                }
+                return plugin;
+            });
             return {
                 ...webpackConfig,
                 entry: {
@@ -13,7 +22,7 @@ module.exports = {
                         paths.appIndexJs,
                     ].filter(Boolean),
                     content: "./src/components/content/content.js",
-                    popup: "./src/components/popup/popup.js"
+                    popup: "./src/components/popup/popup-extension.tsx"
                 },
                 output: {
                     ...webpackConfig.output,

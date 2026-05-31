@@ -26,6 +26,8 @@
   "scripts": {
     "dev": "webpack --watch",
     "start": "web-ext run --source-dir=build",
+    "start-ui": "set REACT_APP_POPUP_MODE=standard&& react-scripts start",
+    "start-ui:extension": "set REACT_APP_POPUP_MODE=extension&& react-scripts start",
     "build": "set INLINE_RUNTIME_CHUNK=false && craco build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
