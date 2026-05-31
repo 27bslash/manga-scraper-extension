@@ -14,6 +14,15 @@ interface TabtogglerProps {
 }
 function TabToggler(props: TabtogglerProps) {
   const [value, setValue] = React.useState(0);
+  const tabsSx = {
+    "& .MuiTabs-flexContainer": {
+      justifyContent: "space-between",
+    },
+    "& .MuiTab-root": {
+      flex: 1,
+      minWidth: 0,
+    },
+  };
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
@@ -26,6 +35,7 @@ function TabToggler(props: TabtogglerProps) {
           value={value}
           onChange={handleChange}
           aria-label="basic tabs example"
+          sx={tabsSx}
           TabIndicatorProps={{
             style: {
               background: "rgb(119, 119, 203)",
@@ -55,6 +65,7 @@ function TabToggler(props: TabtogglerProps) {
           value={value}
           onChange={handleChange}
           aria-label="basic tabs example"
+          sx={tabsSx}
           TabIndicatorProps={{
             style: {
               background: "rgb(119, 119, 203)",
@@ -78,6 +89,7 @@ function TabToggler(props: TabtogglerProps) {
         <Tabs
           value={value}
           aria-label="basic tabs example"
+          sx={tabsSx}
           TabIndicatorProps={{
             style: {
               display: "none",
@@ -108,6 +120,7 @@ function TabToggler(props: TabtogglerProps) {
           value={value}
           onChange={handleChange}
           aria-label="basic tabs example"
+          sx={tabsSx}
           TabIndicatorProps={{
             style: {
               display: "none",

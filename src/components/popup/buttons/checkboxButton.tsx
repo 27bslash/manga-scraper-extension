@@ -1,33 +1,32 @@
-import { Checkbox, ListItemButton, ListItemIcon } from "@mui/material"
+import { Box, Checkbox } from "@mui/material"
 
 const Checkboxbutton = (props: any) => {
 
     // console.log('%c checked keys', 'color: blue', chkKeys)
     const shouldButtonBeChecked = props.checked.find((x: string) => x === props.title)
     return (
-        <ListItemButton role={undefined} onClick={() => props.handleToggle(props.idx, props.title)}
+        <Box
+            role="button"
+            onClick={() => props.handleToggle(props.idx, props.title)}
             sx={{
-                ml: 1,
-                "&.MuiListItemButton-root:hover": {
-                    bgcolor: "transparent"
-                },
-                bgColor: shouldButtonBeChecked ? "primary.light" : "transparent"
+                width: 20,
+                minWidth: 20,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
             }}
-            disableRipple
-            dense>
-            <ListItemIcon>
-                <Checkbox
-                    edge="end"
-                    checked={shouldButtonBeChecked ? true : false}
-                    tabIndex={-1}
-                    disableRipple={true}
-                    // input{{ 'aria-labelledby': labelId }}
-                    sx={{
-                        width: 20,
-                        padding: 0
-                    }} />
-            </ListItemIcon>
-        </ListItemButton>
+        >
+            <Checkbox
+                checked={shouldButtonBeChecked ? true : false}
+                tabIndex={-1}
+                disableRipple={true}
+                sx={{
+                    width: 20,
+                    padding: 0
+                }}
+            />
+        </Box>
     )
 }
 export default Checkboxbutton

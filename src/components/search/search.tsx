@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import Manga from '../../types/manga';
 
 const Search = (props: any) => {
+    const storageLocal = globalThis?.chrome?.storage?.local;
     const [value, setValue] = useState('');
     const [m, setM] = useState(props.data || []);
     const [dataRecieved, setDataRecieved] = useState(false);
@@ -13,11 +14,17 @@ const Search = (props: any) => {
     let sorted: Manga[] = []
     let minLen = 3
     if (props.data) minLen = 0
+    const getStoredMangaList = (cb: (list: Manga[]) => void) => {
+        if (!storageLocal?.get) {
+            cb(props.data || []);
+            return;
+        }
+        storageLocal.get('manga-list', (res) => cb(res['manga-list'] || []));
+    }
     const initData = () => {
         if (props.data) {
 
-            chrome.storage.local.get('manga-list', (res) => {
-                const mangaList = res['manga-list']
+            getStoredMangaList((mangaList) => {
                 if (props.showAll) {
                     console.log('full search')
                     setM(mangaList)
@@ -31,8 +38,7 @@ const Search = (props: any) => {
                 setDataRecieved(true)
             }
         } else {
-            chrome.storage.local.get('manga-list', (res) => {
-                const mangaList = res['manga-list']
+            getStoredMangaList((mangaList) => {
                 const titleList = mangaList.map((x: Manga) => x.title)
                 if (props.allManga) {
                     console.log('allManga')
@@ -80,11 +86,16 @@ const Search = (props: any) => {
         <div className="search-container" style={{
             marginRight: 0,
             marginLeft: 'auto',
-            padding: '5px'
+            padding: '0',
+            flex: 1,
+            display: 'flex',
+            justifyContent: 'flex-end'
         }}>
             <TextField
                 sx={{
-                    width: '80%', height: '80%', input: {
+                    width: '100%',
+                    maxWidth: '180px',
+                    input: {
                         color: '#fff', backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px', borderRadius: '5px',
                         "&::before": {
                             display: 'none',

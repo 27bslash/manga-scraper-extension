@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
+import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import { ThemeProvider } from "@emotion/react";
 import { createTheme } from "@mui/material";
@@ -36,29 +35,36 @@ const MasterBox = (props: any) => {
             theme={theme}
         >
             <div style={{
-                display: 'flex', alignItems: 'center'
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0,
+                gap: '6px',
             }}>
-                <ListItemButton role={undefined} onClick={handleClick} disableRipple dense sx={{ padding: 0 }}>
-                    <ListItemIcon>
-                        <Checkbox
-                            edge="end"
-                            checked={checked}
-                            tabIndex={-1}
-                            disableRipple={true}
-                            color='secondary'
-                            sx={{
-                                width: 20,
-                                padding: 0,
-                                ml: 1,
-                                "&.MuiListItemButton-root:hover": {
-                                    bgcolor: "transparent"
-                                },
-                                bgColor: '#fff'
-                            }}
-                        />
-                    </ListItemIcon>
-                </ListItemButton>
-                <p style={{ marginTop: '1px', marginLeft: '2px', color: '#fff' }}> Select All</p>
+                <Box
+                    role="button"
+                    onClick={handleClick}
+                    sx={{
+                        width: 20,
+                        minWidth: 20,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        cursor: "pointer",
+                    }}
+                >
+                    <Checkbox
+                        checked={checked}
+                        tabIndex={-1}
+                        disableRipple={true}
+                        color='secondary'
+                        sx={{
+                            width: 20,
+                            padding: 0,
+                            bgColor: '#fff'
+                        }}
+                    />
+                </Box>
+                <p style={{ marginTop: '1px', marginLeft: 13, color: '#fff' }}>Select All</p>
             </div >
         </ThemeProvider >
     )

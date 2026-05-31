@@ -1,34 +1,83 @@
 import { useState, useEffect } from "react";
 import List from "@mui/material/List";
 import BasicTabs from "../nav/list-top";
-import { Container } from "@mui/material";
-import Manga from "../../../types/manga";
+import { Box, Container } from "@mui/material";
+import Manga, { AllManga } from "../../../types/manga";
 import MListItem from "./list-item/manga-list-item";
 import MangaListItemControls from "./manga-list-controls";
 import SearchResults from "../../search/searchResults";
 
 interface listProps {
-  allManga: Manga[];
+  allManga?: AllManga[];
+  demoMangaList?: Manga[];
 }
 interface CheckedType {
   [key: string]: string;
 }
-export default function CheckboxList(props: listProps) {
+export default function UserMangaList(props: listProps) {
+  const runtime = globalThis?.chrome?.runtime;
+  const storageLocal = globalThis?.chrome?.storage?.local;
   const [checked, setChecked] = useState<string[]>([]);
   const [showAll, setShowAll] = useState<boolean>();
   const [data, setData] = useState<Manga[]>([]);
   const [totalData, setTotalData] = useState<Manga[]>([]);
-  const [refresh, setRefresh] = useState(false);
   const [addNew, setAddNew] = useState(false);
   const [updated, setUpdated] = useState(false);
   const [checkAll, setCheckAll] = useState(false);
   const [deletePrompt, setDeletePrompt] = useState(false);
-  useEffect(() => {
-    chrome.storage.local.get("manga-list", (res) => {
-      setTotalData(res["manga-list"]);
-      updateShowAll(res["manga-list"]);
+
+  const getStoredMangaList = (cb: (list: Manga[]) => void) => {
+    if (!storageLocal?.get) {
+      cb(props.demoMangaList || totalData || []);
+      return;
+    }
+    storageLocal.get("manga-list", (res) => cb(res["manga-list"] || []));
+  };
+
+  const setStoredMangaList = (list: Manga[]) => {
+    if (!storageLocal?.set) {
+      setTotalData(list);
+      return;
+    }
+    storageLocal.set({ "manga-list": list });
+  };
+  const syncList = (list: Manga[]) => {
+    setStoredMangaList(list);
+    updateDatabase("update", list);
+  };
+  const updateMangaByTitle = (title: string, updater: (m: Manga) => void) => {
+    getStoredMangaList((mangaList) => {
+      const nextList = mangaList.map((item) => {
+        if (normalizeTitle(item.title) !== normalizeTitle(title)) return item;
+        const clone = {
+          ...item,
+          sources: { ...item.sources },
+        };
+        updater(clone);
+        return clone;
+      });
+      syncList(nextList);
+      sortData();
+      updateShowAll(nextList);
     });
-    sortData();
+  };
+  const markMangaAsRead = (title: string, source: string) => {
+    updateMangaByTitle(title, (element) => {
+      const activeSource = element.sources[source];
+      if (!activeSource) return;
+
+      element.read = true;
+      element.chapter = activeSource.latest;
+      activeSource.chapter = activeSource.latest;
+      activeSource.url = activeSource.latest_link;
+    });
+  };
+  useEffect(() => {
+    getStoredMangaList((mangaList) => {
+      setTotalData(mangaList);
+      updateShowAll(mangaList);
+    });
+    sortData(showAll);
   }, []);
   const updateShowAll = (data: Manga[] = []) => {
     if (!data) data = totalData;
@@ -42,30 +91,33 @@ export default function CheckboxList(props: listProps) {
   };
   useEffect(() => {
     // console.log('init data', showAll)
-    sortData();
+    sortData(showAll);
     console.log(data);
   }, [showAll]);
 
   useEffect(() => {
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangalist = res["manga-list"];
-      let updated = false;
+    getStoredMangaList((mangalist) => {
+      let didChange = false;
       mangalist.forEach((x: Manga) => {
         if (x.chapter === x.latest) {
-          x.read = true;
-          updated = true;
+          if (!x.read) {
+            x.read = true;
+            didChange = true;
+          }
         } else {
-          x.read = false;
-          updated = true;
+          if (x.read) {
+            x.read = false;
+            didChange = true;
+          }
         }
       });
-      if (updated) {
-        chrome.storage.local.set({ "manga-list": mangalist });
+      if (didChange) {
+        setStoredMangaList(mangalist);
         updateDatabase("update", mangalist);
-        sortData();
+        sortData(showAll);
       }
     });
-  }, [refresh]);
+  }, []);
   // const [data, setData] = useState(testData)
   const toggleAll = (b: boolean) => {
     setCheckAll(!b);
@@ -101,18 +153,16 @@ export default function CheckboxList(props: listProps) {
       return;
     }
     newData = newData.filter(
-      (manga: Manga) => !checked.includes(manga["title"])
+      (manga: Manga) => !checked.includes(manga["title"]),
     );
     setTotalData(newData);
-    chrome.storage.local.set({ "manga-list": newData });
-    updateDatabase("update", newData);
-    sortData();
+    syncList(newData);
+    sortData(showAll);
     setDeletePrompt(false);
   };
 
   const updateRead = (b: boolean) => {
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangaList = res["manga-list"];
+    getStoredMangaList((mangaList) => {
       mangaList.forEach((manga: Manga, i: number) => {
         const currentSource = manga["current_source"];
         for (let check of checked) {
@@ -135,15 +185,17 @@ export default function CheckboxList(props: listProps) {
       console.log("manga set local storage list", mangaList);
       setChecked([]);
       setCheckAll(false);
-      chrome.storage.local.set({ "manga-list": mangaList });
-      sortData();
+      syncList(mangaList);
+      sortData(showAll);
       updateShowAll(mangaList);
-      updateDatabase("update", mangaList);
     });
   };
   const updateDatabase = (type: string, data: Manga[]) => {
+    if (!runtime?.sendMessage) {
+      return;
+    }
     console.log("update database");
-    chrome.runtime.sendMessage({ type: type, data: data }, (response) => {
+    runtime.sendMessage({ type: type, data: data }, (response) => {
       console.log(`${type} entry`, response);
     });
   };
@@ -151,7 +203,7 @@ export default function CheckboxList(props: listProps) {
     switch (type) {
       case "toggleView":
         setShowAll(b);
-        sortData();
+        sortData(b);
         setAddNew(false);
         break;
       case "addNew":
@@ -162,14 +214,14 @@ export default function CheckboxList(props: listProps) {
     }
   };
 
-  const sortData = () => {
-    console.log("showall", showAll);
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangaList = sortByReleaseTime(res["manga-list"]);
+  const sortData = (nextShowAll = showAll) => {
+    console.log("showall", nextShowAll);
+    getStoredMangaList((storedList) => {
+      const mangaList = sortByReleaseTime(storedList || []);
       try {
         if (mangaList) {
           setTotalData(mangaList);
-          if (!showAll) {
+          if (!nextShowAll) {
             const filtered = mangaList.filter((x: Manga) => {
               if (x.sources[x.current_source].chapter) {
                 return (
@@ -219,8 +271,7 @@ export default function CheckboxList(props: listProps) {
     }
   };
   const addNewManga = (manga: Manga) => {
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangaList = res["manga-list"];
+    getStoredMangaList((mangaList) => {
       console.log("add new manga", manga);
       manga["title"] = manga["title"].toLowerCase().replace(/\s/g, "-");
       const mObject = {
@@ -241,19 +292,17 @@ export default function CheckboxList(props: listProps) {
         console.log("already in list");
       } else {
         mangaList.push(mObject);
-        chrome.storage.local.set({ "manga-list": mangaList });
-        updateDatabase("update", mangaList);
+        syncList(mangaList);
       }
       setUpdated(!updated);
     });
   };
   useEffect(() => {
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangaList = res["manga-list"];
+    getStoredMangaList((mangaList) => {
       const titleList = mangaList.map((x: Manga) => x.title);
       const newData = [...data].filter(
         (x: Manga) =>
-          !titleList.includes(x["title"].toLowerCase().replace(/\s/g, "-"))
+          !titleList.includes(x["title"].toLowerCase().replace(/\s/g, "-")),
       );
       setData(newData);
     });
@@ -265,7 +314,7 @@ export default function CheckboxList(props: listProps) {
         const userSource = manga.sources[manga.current_source].chapter
           ? manga.sources[manga.current_source]
           : manga;
-        if (userSource && userSource.chapter) {
+        if (userSource?.chapter) {
           if (
             +userSource.chapter >= +manga.sources[manga.current_source].latest
           ) {
@@ -280,7 +329,14 @@ export default function CheckboxList(props: listProps) {
     };
   }, [totalData]);
   return (
-    <Container sx={{ maxWidth: "440px", padding: 0 }}>
+    <Box
+      sx={{
+        width: "500px",
+        maxHeight: "315px",
+        overflowY: "scroll",
+        bgcolor: "background.paper",
+      }}
+    >
       <BasicTabs
         updateRead={updateRead}
         showAll={showAll}
@@ -309,7 +365,7 @@ export default function CheckboxList(props: listProps) {
             checked={checkAll}
             deleting={deletePrompt}
           />
-          <List dense sx={{ width: "100%", padding: 0 }}>
+          <List dense sx={{ width: "100%", p: 0 }}>
             {data.map((value, key: number) => {
               if (!value.title) return null;
               return (
@@ -318,6 +374,12 @@ export default function CheckboxList(props: listProps) {
                   handleToggle={handleToggle}
                   checked={checked}
                   idx={key}
+                  mangaList={totalData}
+                  onMangaUpdate={updateMangaByTitle}
+                  onMarkRead={markMangaAsRead}
+                  onLinkClicked={() =>
+                    runtime?.sendMessage?.({ type: "linkClicked" })
+                  }
                 />
               );
             })}
@@ -337,6 +399,8 @@ export default function CheckboxList(props: listProps) {
           />
         </>
       )}
-    </Container>
+    </Box>
   );
 }
+const normalizeTitle = (title: string) =>
+  (title || "").toLowerCase().replace(/\s/g, "-");

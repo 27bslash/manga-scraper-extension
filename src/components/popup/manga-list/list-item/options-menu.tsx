@@ -13,36 +13,48 @@ interface OptionsMenuProps {
   title: string;
 }
 export default function OptionsMenu(props: OptionsMenuProps) {
-  const [displaySource, setDisplaySource] = useState("");
+  const [displaySource, setDisplaySource] = useState("any");
   const handleChange = (event: SelectChangeEvent) => {
     setDisplaySource(event.target.value as string);
     props.updateUrl(event.target.value as string);
   };
   useEffect(() => {
+    const sourceKeys = Object.keys(props.sources || {});
+    if (sourceKeys.length === 0) {
+      setDisplaySource("any");
+      return;
+    }
+
     if (props.currentSource === "any") {
+      const anyLatestLink = props.sources.any?.latest_link;
+      let matchedSource = "";
       for (const k in props.sources) {
         if (
           k !== "any" &&
-          props.sources[k].latest_link ===
-            props.sources[props.currentSource].latest_link
+          anyLatestLink &&
+          props.sources[k]?.latest_link === anyLatestLink
         ) {
-        //   console.log(
-        //     "set display source",
-        //     props.title,
-        //     props.currentSource,
-        //     k
-        //   );
-          setDisplaySource(k);
+          matchedSource = k;
           break;
         }
       }
+      setDisplaySource(matchedSource || "any");
     } else {
-      setDisplaySource(props.currentSource);
+      setDisplaySource(
+        props.sources[props.currentSource]
+          ? props.currentSource
+          : sourceKeys[0] || "any",
+      );
     }
   }, [props.currentSource, props.sources]);
 
   return (
-    <Box>
+    <Box
+      className="options-wrapper"
+      justifyContent={"flex-end"}
+      display={"flex"}
+      sx={{ width: "100%" }}
+    >
       <FormControl variant="standard">
         <Select
           disableUnderline
@@ -51,6 +63,16 @@ export default function OptionsMenu(props: OptionsMenuProps) {
           value={displaySource}
           label="Source"
           onChange={handleChange}
+          sx={{
+            width: "100%",
+            "& .MuiSelect-select": {
+              textAlign: "right",
+              pr: "20px !important",
+            },
+            "& .MuiSelect-icon": {
+              right: 0,
+            },
+          }}
         >
           {Object.keys(props.sources).map((key: string, idx: number) => {
             return (

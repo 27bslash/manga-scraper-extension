@@ -1,7 +1,5 @@
-import { Box, FormControl, MenuItem, Select, TextField } from "@mui/material";
-import { useState } from "react";
-import Manga from "../../../../types/manga";
-import EditIcon from "@mui/icons-material/Edit";
+import { Box, Tooltip } from "@mui/material";
+import { MouseEvent } from "react";
 const capitalizeTitle = (title: string) => {
   // capitalize first letter of each word
   let split = " ";
@@ -27,78 +25,37 @@ const capitalizeTitle = (title: string) => {
 
 export const TitleElement = (props: {
   url: string;
-  updateRead: () => void;
+  updateRead: (url: string) => void;
   title: string;
   source?: string;
 }) => {
-  const sources = [
-    "asurascans",
-    "slayerscans",
-    "mangaplus",
-    "mangasushi",
-    "kouhai",
-    "realmscans",
-    "comikey",
-    "danke.moe",
-    "kireicake",
-    "setsuscans",
-    "luminousscans",
-    "reaperscans",
-    "mangadex",
-    "dynasty-scans",
-    "guya.moe",
-    "flamescans",
-    "viewer.heros-web",
-    "gdstmp.site",
-    "webtoons",
-    "mm-scans",
-    "leviatanscans",
-    "onepiecechapters",
-    "alpha-scans",
-    "sensescans",
-    "cosmicscans",
-  ];
-
-  const [text, setText] = useState("");
-  const [showForm, setShowForm] = useState(false);
   const handleClick = () => {
-    if (!props.source || !sources.includes(props.source)) {
-      props.updateRead();
+    props.updateRead(props.url);
+  };
+
+  const handleAuxClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button === 1) {
+      props.updateRead(props.url);
     }
-  };
-  const handleChange = (event: any) => {};
-  const handleTextChange = (event: any) => {
-    setText(event.target.value);
-  };
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!text.trim()) return;
-    console.log("submit", text);
-    chrome.storage.local.get("manga-list", (res) => {
-      const mangaList = res["manga-list"];
-      const target = mangaList.find((res: Manga) => res.title === props.title);
-      target.alternate_titles
-        ? target.alternate_titles.push(text)
-        : (target.alternate_titles = [text]);
-      chrome.storage.local.set({ "manga-list": mangaList }, () => {
-        console.log("updated", target);
-        setText("");
-      });
-    });
   };
 
   return (
-    <Box display={"flex"}>
-      <p className="series-title">
+    <Box
+      display={"flex"}
+      sx={{ minWidth: 0, width: "100%", flex: "1 1 0" }}
+    >
+      <Tooltip title={props.url}>
         <a
           href={props.url}
           rel="noreferrer"
           target="_blank"
           onClick={() => handleClick()}
+          onAuxClick={handleAuxClick}
+          className="series-title"
         >
           {capitalizeTitle(props.title)}
         </a>
-      </p>
+      </Tooltip>
     </Box>
   );
 };

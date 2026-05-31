@@ -46,11 +46,11 @@ p {
 }
 .Popup {
   text-align: center;
-  width: 440px;
-  max-height: 300px;
+  max-height: 215px;
   overflow-y: scroll;
   overflow-y: overlay;
   overflow-x: hidden;
+  background-color: blue;
 }
 body {
   margin: 0;
@@ -131,6 +131,18 @@ a:hover {
 #chapter-text {
   /* border: solid 1px black; */
   border-radius: 10px;
+}
+.series-title {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* white-space: nowrap; */
+  display: block;
+  width: 100%;
+  word-break: break-word;
+  padding: 0;
 }
 .text-small {
   font-size: 11px;
