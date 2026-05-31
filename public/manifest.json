@@ -1,11 +1,12 @@
 {
   "name": "Reddit Manga List",
   "description": "Scrapes manga from reddit/r/manga and common scantalation sites then adds to your reading list",
-  "version": "0.48",
+  "version": "0.57",
   "manifest_version": 3,
   "background": {
     "scripts": ["background.js"],
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "preferred_environment": ["document", "service_worker"]
   },
   "action": {
     "default_popup": "index.html",
@@ -28,6 +29,7 @@
         "*://asuratoon.gg/*",
         "*://asuratoon.ru/*",
         "*://asuratoon.xyz/*",
+        "*://asurascans.com/*",
         "*://asuratoon.nacm.xyz/*",
         "*://asura.gg/*",
         "*://asura.nacm.xyz/*",
@@ -79,6 +81,7 @@
     "*://asuratoon.gg/*",
     "*://asuratoon.ru/*",
     "*://asuratoon.xyz/*",
+    "*://asurascans.com/*",
     "*://asuratoon.nacm.xyz/*",
     "*://asura.gg/*",
     "*://asura.nacm.xyz/*",
