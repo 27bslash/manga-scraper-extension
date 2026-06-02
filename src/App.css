@@ -76,11 +76,9 @@ body {
 }
 
 .options-menu {
-  /* position: fixed;
-    top: 0;
-    right: 30%; */
+
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
 }
 .menu-button {
   background-color: white;
