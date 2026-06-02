@@ -1,5 +1,5 @@
 module.exports = {
-  branches: ["main"],
+  branches: ["master"],
   tagFormat: "firefox-v${version}",
   plugins: [
     "@semantic-release/commit-analyzer",
@@ -16,6 +16,8 @@ module.exports = {
     [
       "@semantic-release/github",
       {
+        successComment: false,
+        failComment: false,
         assets: [
           {
             path: "web-ext-artifacts/*.xpi",
