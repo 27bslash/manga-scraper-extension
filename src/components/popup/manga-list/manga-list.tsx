@@ -99,7 +99,7 @@ export default function UserMangaList(props: listProps) {
     getStoredMangaList((mangalist) => {
       let didChange = false;
       mangalist.forEach((x: Manga) => {
-        if (x.chapter === x.latest) {
+        if (+x.chapter === +x.latest) {
           if (!x.read) {
             x.read = true;
             didChange = true;

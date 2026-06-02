@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import Manga from "./../../types/manga";
-import { IconButton, Snackbar } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import DoneIcon from "@mui/icons-material/Done";
+import { Snackbar } from "@mui/material";
+
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import { CustomSnackBar } from "./snackBar";
 import { extractTitle } from "./parseTitle";
@@ -44,7 +43,7 @@ const Overlay = (props: { title: string }) => {
       };
     },
     scansite: string,
-    chapter: string
+    chapter: string,
   ) => {
     let timeUpdated = Date.now() / 1000;
     console.log(source[scansite], source, scansite);
@@ -58,7 +57,9 @@ const Overlay = (props: { title: string }) => {
         latest: source[scansite].latest || source.any?.latest || chapter,
         chapter: chapter,
         latest_link:
-          source[scansite].latest_link || source.any?.latest_link || data["link"],
+          source[scansite].latest_link ||
+          source.any?.latest_link ||
+          data["link"],
         time_updated: timeUpdated,
         old_chapters: source[scansite].old_chapters || {},
       };
@@ -75,29 +76,33 @@ const Overlay = (props: { title: string }) => {
 
   useEffect(() => {
     chrome.storage.local.get("manga-list", (result) => {
-      result["manga-list"].forEach((x: Manga) => {
+      result["manga-list"].forEach((storedMangaItem: Manga) => {
         // console.log(data.title, x['title'])
-        if (titleSimilarity(data.title, x)) {
+        if (titleSimilarity(data.title, storedMangaItem)) {
           // update chapter
-          console.log("title is similar", x["title"]);
+          console.log("title is similar", storedMangaItem["title"]);
           setShowPrompt(false);
-          if (data["chapter"] > x["chapter"]) {
-            console.log("update chapter");
-            x["chapter"] = data["chapter"];
-            x["scansite"] = data["scansite"];
-            x["link"] = data["link"];
-            if (!x["sources"]) {
-              x["sources"] = {};
-            }
-            x["sources"][data["scansite"]] = getLatest(
-              x["sources"],
-              data["scansite"],
-              data["chapter"]
+          if (+data["chapter"] > +storedMangaItem["chapter"]) {
+            console.log(
+              `update chapter from ${storedMangaItem["chapter"]} to ${data["chapter"]}`,
             );
-            x["sources"]["any"] = x["sources"][data["scansite"]];
-            x["read"] = x["chapter"] >= x["latest"];
-            console.log("updated series info:", x);
-            updateManga(x);
+            storedMangaItem["chapter"] = data["chapter"];
+            storedMangaItem["scansite"] = data["scansite"];
+            storedMangaItem["link"] = data["link"];
+            if (!storedMangaItem["sources"]) {
+              storedMangaItem["sources"] = {};
+            }
+            storedMangaItem["sources"][data["scansite"]] = getLatest(
+              storedMangaItem["sources"],
+              data["scansite"],
+              data["chapter"],
+            );
+            storedMangaItem["sources"]["any"] =
+              storedMangaItem["sources"][data["scansite"]];
+            storedMangaItem["read"] =
+              +storedMangaItem["chapter"] >= +storedMangaItem["latest"];
+            console.log("updated series info:", storedMangaItem);
+            updateManga(storedMangaItem);
             updatePrompt(false);
           }
         }
@@ -115,13 +120,13 @@ const Overlay = (props: { title: string }) => {
     chrome.storage.local.get("blacklist", (result) => {
       let blacklist = result["blacklist"] || [];
       const foundManga = blacklist.find(
-        (x: any) => x["title"] === data["title"]
+        (x: any) => x["title"] === data["title"],
       );
       if (!foundManga) return;
       if (data["chapter"] - 5 >= +foundManga["chapter"]) {
         console.log("title in blacklist", data["title"], foundManga);
         blacklist = blacklist.filter(
-          (manga: Manga) => manga["title"] !== data["title"]
+          (manga: Manga) => manga["title"] !== data["title"],
         );
         chrome.storage.local.set({ blacklist: blacklist }, () => {
           setOpen(true);
@@ -136,7 +141,7 @@ const Overlay = (props: { title: string }) => {
       }
       let blacklist: { title: string; chapter: string }[] = result["blacklist"];
       const foundManga = blacklist.find(
-        (x: any) => x["title"] === data["title"]
+        (x: any) => x["title"] === data["title"],
       );
       console.log("blacklist", blacklist, foundManga);
       if (!foundManga) {
@@ -154,7 +159,7 @@ const Overlay = (props: { title: string }) => {
   };
   const handleClose = (
     event: React.SyntheticEvent | Event,
-    reason?: string
+    reason?: string,
   ) => {
     if (event) {
       let target = event.target as HTMLElement;
@@ -199,7 +204,7 @@ const Overlay = (props: { title: string }) => {
         const filteredBlacklist = blacklist.find(
           (x: any) =>
             x["title"] === data["title"] &&
-            data["chapter"] - 5 <= +x["chapter"]
+            data["chapter"] - 5 <= +x["chapter"],
         );
         if (filteredBlacklist) {
           setOpen(false);
@@ -282,7 +287,7 @@ const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
     },
     (response) => {
       console.log("response", response);
-    }
+    },
   );
   updatePrompt(false);
 };
