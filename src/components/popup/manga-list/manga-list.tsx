@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
 import List from "@mui/material/List";
 import BasicTabs from "../nav/list-top";
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import Manga, { AllManga } from "../../../types/manga";
 import MListItem from "./list-item/manga-list-item";
 import MangaListItemControls from "./manga-list-controls";
 import SearchResults from "../../search/searchResults";
 
-interface listProps {
+interface ListProps {
   allManga?: AllManga[];
   demoMangaList?: Manga[];
 }
-interface CheckedType {
-  [key: string]: string;
-}
-export default function UserMangaList(props: listProps) {
+
+export default function UserMangaList(props: ListProps) {
   const runtime = globalThis?.chrome?.runtime;
   const storageLocal = globalThis?.chrome?.storage?.local;
   const [checked, setChecked] = useState<string[]>([]);
@@ -78,7 +76,7 @@ export default function UserMangaList(props: listProps) {
       updateShowAll(mangaList);
     });
     sortData(showAll);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const updateShowAll = (data: Manga[] = []) => {
     if (!data) data = totalData;
     const filteredData = data.filter((x: Manga) => !x.read);
@@ -89,35 +87,7 @@ export default function UserMangaList(props: listProps) {
       setShowAll(false);
     }
   };
-  useEffect(() => {
-    // console.log('init data', showAll)
-    sortData(showAll);
-    console.log(data);
-  }, [showAll]);
 
-  useEffect(() => {
-    getStoredMangaList((mangalist) => {
-      let didChange = false;
-      mangalist.forEach((x: Manga) => {
-        if (+x.chapter === +x.latest) {
-          if (!x.read) {
-            x.read = true;
-            didChange = true;
-          }
-        } else {
-          if (x.read) {
-            x.read = false;
-            didChange = true;
-          }
-        }
-      });
-      if (didChange) {
-        setStoredMangaList(mangalist);
-        updateDatabase("update", mangalist);
-        sortData(showAll);
-      }
-    });
-  }, []);
   // const [data, setData] = useState(testData)
   const toggleAll = (b: boolean) => {
     setCheckAll(!b);
@@ -147,7 +117,7 @@ export default function UserMangaList(props: listProps) {
     console.log("del", value);
     console.log("search data", newData);
     if (value !== -1) {
-      const spliced = newData.splice(value, 1);
+      newData.splice(value, 1);
       setData(newData);
       setChecked([]);
       return;
@@ -246,6 +216,31 @@ export default function UserMangaList(props: listProps) {
     });
     setChecked([]);
   };
+  useEffect(() => {
+    getStoredMangaList((mangalist) => {
+      let didChange = false;
+      mangalist.forEach((x: Manga) => {
+        if (+x.chapter === +x.latest) {
+          if (!x.read) {
+            x.read = true;
+            didChange = true;
+          }
+        } else if (x.read) {
+          x.read = false;
+          didChange = true;
+        }
+      });
+      if (didChange) {
+        setStoredMangaList(mangalist);
+        updateDatabase("update", mangalist);
+        sortData(showAll);
+      }
+    });
+  }, [data, showAll]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // console.log('init data', showAll)
+    sortData(showAll);
+  }, [showAll]); // eslint-disable-line react-hooks/exhaustive-deps
   const sortByReleaseTime = (list: Manga[]) => {
     list.sort((a: Manga, b: Manga) => {
       let currentSourceA = "any";
@@ -306,28 +301,8 @@ export default function UserMangaList(props: listProps) {
       );
       setData(newData);
     });
-  }, [updated]);
-  useEffect(() => {
-    const updateReadOfAll = () => {
-      if (totalData.length === 0) return;
-      totalData.forEach((manga: Manga) => {
-        const userSource = manga.sources[manga.current_source].chapter
-          ? manga.sources[manga.current_source]
-          : manga;
-        if (userSource?.chapter) {
-          if (
-            +userSource.chapter >= +manga.sources[manga.current_source].latest
-          ) {
-            if (!manga.read) console.log("set read true", manga);
-            manga.read = true;
-          } else {
-            if (manga.read) console.log("set read false", manga);
-            manga.read = false;
-          }
-        }
-      });
-    };
-  }, [totalData]);
+  }, [updated]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Box
       sx={{

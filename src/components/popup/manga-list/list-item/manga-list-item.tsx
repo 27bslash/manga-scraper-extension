@@ -1,11 +1,10 @@
-import { MouseEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Grid, ListItem, Divider } from "@mui/material";
 import Manga from "../../../../types/manga";
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en.json";
 import Checkboxbutton from "./../../buttons/checkboxButton";
 import { MangaData } from "./gridItem";
-import { getNextChapterUrl } from "../../../../utils/mangaUtils";
 TimeAgo.addDefaultLocale(en);
 
 interface MListItemProps {
@@ -77,17 +76,8 @@ const MListItem = (props: MListItemProps) => {
     ) {
       console.log("DEFUALT TO ANY: ", props.data);
       setCurrentSource("any");
-    } else {
-      if (props.data.title === "superhuman-era") {
-        console.log(
-          "set to first source",
-          props.data.current_source,
-          allSources,
-        );
-      }
-      //   setCurrentSource("allSources[0]");
     }
-  }, [props.data.current_source]);
+  }, [props.data.current_source, props.data]);
 
   const updateMangaLinks = () => {
     const badSources = ["mangadex", "reaperscans"];
@@ -135,7 +125,7 @@ const MListItem = (props: MListItemProps) => {
   };
   useEffect(() => {
     updateMangaLinks();
-  }, [props.data, currentSource, selectedOldChapter]);
+  }, [props.data, currentSource, selectedOldChapter]); // eslint-disable-line react-hooks/exhaustive-deps
   // const [latestUrl, setLatestUrl] = useState(props.data.latestLink);
 
   const updateCurrentSource = (key: string) => {

@@ -2,7 +2,7 @@ import React from "react";
 import "./App.css";
 import Popup from "./components/popup/popup";
 import { useEffect, useState } from "react";
-import Manga, { AllManga } from "./types/manga";
+import  { AllManga } from "./types/manga";
 function PopupFromExtension() {
   const [allManga, setAllManga] = useState<AllManga[]>([]);
 

@@ -30,7 +30,7 @@ const Overlay = (props: { title: string }) => {
         }
       }, 1000);
     }
-  }, [props.title]);
+  }, [props.title, data?.domain]);
   const getLatest = (
     source: {
       [x: string]: {
@@ -232,7 +232,7 @@ const Overlay = (props: { title: string }) => {
   //   );
   useEffect(() => {
     checkBlacklist();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="manga-overlay">
       {+data["chapter"] > 10 && showPrompt && (

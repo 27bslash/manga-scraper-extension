@@ -2,7 +2,7 @@ import { Grid, Tooltip } from "@mui/material";
 import OptionsMenu from "./options-menu";
 import { TitleElement } from "./seriesTItle";
 import Manga from "../../../../types/manga";
-import { MouseEvent, useState } from "react";
+import { MouseEvent } from "react";
 
 import OldChapterSelector from "./oldChapterSelector";
 export interface gridItemProps {
