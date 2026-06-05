@@ -23,12 +23,7 @@ export interface gridItemProps {
 }
 export const MangaData = (props: gridItemProps) => {
   const chapterOptions = props.availableOldChapters;
-  console.log(
-    "title",
-    props.title,
-    "availableOldChapters",
-    props.availableOldChapters,
-  );
+
   return (
     <>
       <Grid

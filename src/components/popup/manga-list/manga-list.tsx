@@ -189,26 +189,23 @@ export default function UserMangaList(props: ListProps) {
     getStoredMangaList((storedList) => {
       const mangaList = sortByReleaseTime(storedList || []);
       try {
-        if (mangaList) {
-          setTotalData(mangaList);
-          if (!nextShowAll) {
-            const filtered = mangaList.filter((x: Manga) => {
-              if (x.sources[x.current_source].chapter) {
-                return (
-                  +x.sources[x.current_source].chapter <
-                  +x.sources[x.current_source].latest
-                );
-              } else {
-                return !x.read;
-              }
-            });
-            // const filtered = mangaList.filter((x: Manga) => !x.read);
+        setTotalData(mangaList);
+        if (!nextShowAll) {
+          const unread = mangaList.filter((x: Manga) => {
+            if (x.sources[x.current_source].chapter) {
+              return (
+                +x.sources[x.current_source].chapter <
+                +x.sources[x.current_source].latest
+              );
+            }
+            return false;
+          });
+          // const filtered = mangaList.filter((x: Manga) => !x.read);
 
-            setData(filtered);
-            console.log("mangalist", data);
-          } else {
-            setData(mangaList);
-          }
+          setData(unread);
+          console.log("mangalist", data);
+        } else {
+          setData(mangaList);
         }
       } catch (error) {
         console.log("data ", error);
@@ -219,18 +216,26 @@ export default function UserMangaList(props: ListProps) {
   useEffect(() => {
     getStoredMangaList((mangalist) => {
       let didChange = false;
+      const changedTitles: string[] = [];
       mangalist.forEach((x: Manga) => {
-        if (+x.chapter === +x.latest) {
+        if (
+          x.chapter === x.latest ||
+          +x.sources[x.current_source].chapter >=
+            +x.sources[x.current_source].latest
+        ) {
           if (!x.read) {
             x.read = true;
+            changedTitles.push(x.title);
             didChange = true;
           }
         } else if (x.read) {
           x.read = false;
           didChange = true;
+          changedTitles.push(x.title);
         }
       });
       if (didChange) {
+        console.log("something changed updating database ", changedTitles);
         setStoredMangaList(mangalist);
         updateDatabase("update", mangalist);
         sortData(showAll);
