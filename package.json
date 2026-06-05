@@ -31,6 +31,7 @@
     "build": "set INLINE_RUNTIME_CHUNK=false && craco build",
     "test": "react-scripts test",
     "release": "semantic-release",
+    "local-release": "semantic-release --dry-run",
     "eject": "react-scripts eject",
     "build-firefox": "npm run move-firefox-manifest && npm run build && npm run zip && run zip source",
     "build-chrome": "npm run move-chrome-manifest && npm run build && npm run zip",
@@ -60,6 +61,7 @@
   "devDependencies": {
     "@navikt/craco-plugins": "github:navikt/craco-plugins",
     "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
     "@types/chrome": "^0.0.180",
     "@vitejs/plugin-react": "^5.0.2",
     "cross-zip": "^4.0.1",
