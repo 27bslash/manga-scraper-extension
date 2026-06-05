@@ -14,6 +14,14 @@ module.exports = {
       },
     ],
     [
+      "@semantic-release/git",
+      {
+        assets: ["public/manifest.json"],
+        message:
+          "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+      },
+    ],
+    [
       "@semantic-release/github",
       {
         successComment: false,

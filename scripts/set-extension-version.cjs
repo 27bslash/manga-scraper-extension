@@ -1,7 +1,7 @@
 const fs = require("fs");
 
 const version = process.argv[2];
-
+console.log("setting extension manifest version to: ", version);
 if (!version) {
   throw new Error("Usage: node scripts/set-extension-version.cjs <version>");
 }
