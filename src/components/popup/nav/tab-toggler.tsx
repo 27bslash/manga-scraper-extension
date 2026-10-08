@@ -27,7 +27,7 @@ function TabToggler(props: TabtogglerProps) {
     setValue(newValue);
   };
 
-  const filteredData = props.totalData || [].filter((x: Manga) => !x.read);
+  const filteredData = (props.totalData || []).filter((x: Manga) => !x.read);
   return (
     <>
       {props.checked.length === 0 && filteredData.length > 0 && (
