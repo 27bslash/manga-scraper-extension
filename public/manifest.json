@@ -1,12 +1,17 @@
 {
   "name": "Reddit Manga List",
   "description": "Scrapes manga from reddit/r/manga and common scantalation sites then adds to your reading list",
-  "version": "0.57.2",
+  "version": "0.58.0",
   "manifest_version": 3,
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "service_worker": "background.js",
-    "preferred_environment": ["document", "service_worker"]
+    "preferred_environment": [
+      "document",
+      "service_worker"
+    ]
   },
   "action": {
     "default_popup": "index.html",
@@ -61,11 +66,18 @@
         "*://cosmicscans.com/*"
       ],
       "run_at": "document_end",
-      "js": ["static/js/content.js"],
-      "css": ["App.css"]
+      "js": [
+        "static/js/content.js"
+      ],
+      "css": [
+        "App.css"
+      ]
     }
   ],
-  "permissions": ["alarms", "storage"],
+  "permissions": [
+    "alarms",
+    "storage"
+  ],
   "host_permissions": [
     "*://asuracomic.net/*",
     "*://asuracomic.com/*",
