@@ -1,14 +1,15 @@
 /* eslint-disable no-undef */
-const WS_URL = "wss://0igubzuowh.execute-api.eu-west-2.amazonaws.com/dev";
-let ws = null;
-let wsReconnectTimer = null;
-let wsUser = null;
-let wsManualClose = false;
-let wsConnecting = false;
+// const WS_URL = "wss://0igubzuowh.execute-api.eu-west-2.amazonaws.com/dev";
+// let ws = null;
+// let wsReconnectTimer = null;
+// let wsUser = null;
+// let wsManualClose = false;
+// let wsConnecting = false;
 const OFFSCREEN_DOCUMENT = "offscreen.html";
 const OFFSCREEN_BG_LOG_PREFIX = "[offscreen:bg]";
 const FIREFOX_KEEPALIVE_ALARM = "firefox-keepalive";
-const FIREFOX_KEEPALIVE_PERIOD_MINUTES = 0.5; // 30 seconds
+const POLL_ALARM = "manga-list-poll";
+const POLL_PERIOD_MINUTES = 30;
 const ALL_MANGA_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 let offscreenCreating = null;
 const actionApi = chrome.action || chrome.browserAction;
@@ -28,16 +29,16 @@ chrome.runtime.onInstalled.addListener((details) => {
     initialiseNewUser();
   }
   console.log(
-    "initializing extension; ensuring keepalive strategy and starting WebSocket",
+    "initializing extension; ensuring keepalive strategy and starting polling",
   );
   ensureKeepaliveStrategy();
-  startWebSocket();
+  ensurePollAlarm();
   updateStorage();
 });
 chrome.runtime.onStartup.addListener(() => {
   console.log("Extension started");
   ensureKeepaliveStrategy();
-  startWebSocket();
+  ensurePollAlarm();
   updateStorage();
 });
 chrome.storage.onChanged.addListener(() => {
@@ -108,11 +109,14 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 if (chrome.alarms?.onAlarm) {
   chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name !== FIREFOX_KEEPALIVE_ALARM) {
+    if (alarm.name === FIREFOX_KEEPALIVE_ALARM) {
+      console.log(`${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm fired.`);
       return;
     }
-    console.log(`${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm fired.`);
-    startWebSocket();
+    if (alarm.name === POLL_ALARM) {
+      console.log("Poll alarm fired; updating storage.");
+      updateStorage();
+    }
   });
 }
 
@@ -120,6 +124,7 @@ console.log(
   `${OFFSCREEN_BG_LOG_PREFIX} Background activated; ensuring keepalive strategy.`,
 );
 ensureKeepaliveStrategy();
+ensurePollAlarm();
 updateBadgeText();
 
 function ensureKeepaliveStrategy() {
@@ -128,44 +133,76 @@ function ensureKeepaliveStrategy() {
     return;
   }
 
-  console.log(
-    `${OFFSCREEN_BG_LOG_PREFIX} Offscreen API unavailable in this browser; enabling Firefox alarm fallback.`,
-  );
-  ensureFirefoxKeepaliveAlarm();
+//   console.log(
+//     `${OFFSCREEN_BG_LOG_PREFIX} Offscreen API unavailable in this browser; enabling Firefox alarm fallback.`,
+//   );
+//   ensureFirefoxKeepaliveAlarm();
 }
 
-function ensureFirefoxKeepaliveAlarm() {
+// function ensureFirefoxKeepaliveAlarm() {
+//   if (!chrome.alarms?.create || !chrome.alarms?.get) {
+//     console.warn(
+//       `${OFFSCREEN_BG_LOG_PREFIX} Alarms API unavailable; Firefox fallback keepalive cannot be enabled.`,
+//     );
+//     return;
+//   }
+
+//   chrome.alarms.get(FIREFOX_KEEPALIVE_ALARM, (existingAlarm) => {
+//     const runtimeError = chrome.runtime.lastError;
+//     if (runtimeError) {
+//       console.warn(
+//         `${OFFSCREEN_BG_LOG_PREFIX} Failed to query keepalive alarm:`,
+//         runtimeError.message,
+//       );
+//       return;
+//     }
+
+//     if (existingAlarm) {
+//       console.log(
+//         `${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm already exists.`,
+//         { name: FIREFOX_KEEPALIVE_ALARM },
+//       );
+//       return;
+//     }
+
+//     chrome.alarms.create(FIREFOX_KEEPALIVE_ALARM, {
+//       periodInMinutes: FIREFOX_KEEPALIVE_PERIOD_MINUTES,
+//     });
+//     console.log(`${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm created.`, {
+//       name: FIREFOX_KEEPALIVE_ALARM,
+//       periodInMinutes: FIREFOX_KEEPALIVE_PERIOD_MINUTES,
+//     });
+//   });
+// }
+
+function ensurePollAlarm() {
   if (!chrome.alarms?.create || !chrome.alarms?.get) {
     console.warn(
-      `${OFFSCREEN_BG_LOG_PREFIX} Alarms API unavailable; Firefox fallback keepalive cannot be enabled.`,
+      `${OFFSCREEN_BG_LOG_PREFIX} Alarms API unavailable; polling cannot be enabled.`,
     );
     return;
   }
 
-  chrome.alarms.get(FIREFOX_KEEPALIVE_ALARM, (existingAlarm) => {
+  chrome.alarms.get(POLL_ALARM, (existingAlarm) => {
     const runtimeError = chrome.runtime.lastError;
     if (runtimeError) {
       console.warn(
-        `${OFFSCREEN_BG_LOG_PREFIX} Failed to query keepalive alarm:`,
+        `${OFFSCREEN_BG_LOG_PREFIX} Failed to query poll alarm:`,
         runtimeError.message,
       );
       return;
     }
 
     if (existingAlarm) {
-      console.log(
-        `${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm already exists.`,
-        { name: FIREFOX_KEEPALIVE_ALARM },
-      );
       return;
     }
 
-    chrome.alarms.create(FIREFOX_KEEPALIVE_ALARM, {
-      periodInMinutes: FIREFOX_KEEPALIVE_PERIOD_MINUTES,
+    chrome.alarms.create(POLL_ALARM, {
+      periodInMinutes: POLL_PERIOD_MINUTES,
     });
-    console.log(`${OFFSCREEN_BG_LOG_PREFIX} Firefox keepalive alarm created.`, {
-      name: FIREFOX_KEEPALIVE_ALARM,
-      periodInMinutes: FIREFOX_KEEPALIVE_PERIOD_MINUTES,
+    console.log(`${OFFSCREEN_BG_LOG_PREFIX} Poll alarm created.`, {
+      name: POLL_ALARM,
+      periodInMinutes: POLL_PERIOD_MINUTES,
     });
   });
 }
@@ -243,105 +280,107 @@ function updateBadgeText() {
   );
 }
 
-function buildWebSocketUrl(user) {
-  try {
-    const url = new URL(WS_URL);
-    url.searchParams.set("user", user);
-    return url.toString();
-  } catch {
-    const separator = WS_URL.includes("?") ? "&" : "?";
-    return `${WS_URL}${separator}user=${encodeURIComponent(user)}`;
-  }
-}
-
-async function startWebSocket() {
-  if (wsConnecting) {
-    return;
-  }
-  wsConnecting = true;
-  try {
-    const user = await getUser();
-    if (!user) {
-      scheduleReconnect();
-      return;
-    }
-
-    if (ws && wsUser === user) {
-      return;
-    }
-
-    if (ws && wsUser !== user) {
-      wsManualClose = true;
-      ws.close();
-      ws = null;
-      wsUser = null;
-    }
-
-    try {
-      ws = new WebSocket(buildWebSocketUrl(user));
-      wsUser = user;
-    } catch (err) {
-      console.error("WebSocket failed to start:", err);
-      scheduleReconnect();
-      return;
-    }
-
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-      if (wsReconnectTimer) {
-        clearTimeout(wsReconnectTimer);
-        wsReconnectTimer = null;
-      }
-    };
-
-    ws.onmessage = async (ev) => {
-      console.log("websocket detected change", ev);
-      const updated = await updateStorage();
-      if (!updated) {
-        return;
-      }
-
-      try {
-        const payload = JSON.parse(ev.data);
-        if (
-          payload &&
-          payload.type === "manga-updated" &&
-          ws &&
-          ws.readyState === WebSocket.OPEN
-        ) {
-          ws.send(JSON.stringify({ type: "manga-updated-ack" }));
-        }
-      } catch (error) {
-        console.warn("WebSocket message parse failed:", error);
-      }
-    };
-
-    ws.onclose = () => {
-      console.warn("WebSocket closed");
-      ws = null;
-      wsUser = null;
-      if (wsManualClose) {
-        wsManualClose = false;
-        return;
-      }
-      scheduleReconnect();
-    };
-
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-    };
-  } finally {
-    wsConnecting = false;
-  }
-}
-
-function scheduleReconnect() {
-  if (wsReconnectTimer) return;
-  wsReconnectTimer = setTimeout(() => {
-    wsReconnectTimer = null;
-    startWebSocket();
-  }, 5000);
-}
+// function buildWebSocketUrl(user) {
+//   try {
+//     const url = new URL(WS_URL);
+//     url.searchParams.set("user", user);
+//     return url.toString();
+//   } catch {
+//     const separator = WS_URL.includes("?") ? "&" : "?";
+//     return `${WS_URL}${separator}user=${encodeURIComponent(user)}`;
+//   }
+// }
+// 
+// async function startWebSocket() {
+//   if (wsConnecting) {
+//     return;
+//   }
+//   wsConnecting = true;
+//   try {
+//     const user = await getUser();
+//     if (!user) {
+//       scheduleReconnect();
+//       return;
+//     }
+// 
+//     if (ws && wsUser === user) {
+//       return;
+//     }
+// 
+//     if (ws && wsUser !== user) {
+//       wsManualClose = true;
+//       ws.close();
+//       ws = null;
+//       wsUser = null;
+//     }
+// 
+//     try {
+//       ws = new WebSocket(buildWebSocketUrl(user));
+//       wsUser = user;
+//     } catch (err) {
+//       console.error("WebSocket failed to start:", err);
+//       scheduleReconnect();
+//       return;
+//     }
+// 
+//     ws.onopen = () => {
+//       console.log("WebSocket connected");
+//       if (wsReconnectTimer) {
+//         clearTimeout(wsReconnectTimer);
+//         wsReconnectTimer = null;
+//       }
+//     };
+// 
+//     ws.onmessage = async (ev) => {
+//       console.log("websocket detected change", ev);
+//       const updated = await updateStorage();
+//       if (!updated) {
+//         return;
+//       }
+// 
+//       try {
+//         const payload = JSON.parse(ev.data);
+//         if (
+//           payload &&
+//           payload.type === "manga-updated" &&
+//           ws &&
+//           ws.readyState === WebSocket.OPEN
+//         ) {
+//           ws.send(JSON.stringify({ type: "manga-updated-ack" }));
+//         }
+//       } catch (error) {
+//         console.warn("WebSocket message parse failed:", error);
+//       }
+//     };
+// 
+//     ws.onclose = () => {
+//       console.warn("WebSocket closed");
+//       ws = null;
+//       wsUser = null;
+//       if (wsManualClose) {
+//         wsManualClose = false;
+//         return;
+//       }
+//       scheduleReconnect();
+//     };
+// 
+//     ws.onerror = (err) => {
+//       console.error("WebSocket error:", err);
+//     };
+//   } finally {
+//     wsConnecting = false;
+//   }
+// }
+// 
+// function scheduleReconnect() {
+//   if (wsReconnectTimer) return;
+//   wsReconnectTimer = setTimeout(() => {
+//     wsReconnectTimer = null;
+//     startWebSocket();
+//   }, 5000);
+// }
+// 
+// 
 
 async function ensureOffscreenDocument() {
   const hasOffscreenApi = Boolean(chrome.offscreen?.createDocument);
