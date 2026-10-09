@@ -2,7 +2,8 @@ export const extractTitle = (title: string) => {
     let chapterNum = "",
         scanSite = "";
     const scanRegex = /\w+\s?-?\w+$/gim;
-    const chapterRegex = /(?<=episode\s|chapter\s|#|- |ep. )\d+\.?\d*/im;
+    const chapterRegex =
+        /(?<=\b(?:episode|chapter|ch|ep)[\s.\-_:]+\s*|#\s*|[-\u2013]\s)\d+(?:\.\d+)?/im;
     const cleanTitle = (title: string) => {
         let seriesTitle = title.replace(/’/g, "'").trim()
         seriesTitle = seriesTitle.replace(/manhwa/gi, '')
@@ -68,5 +69,11 @@ export const extractTitle = (title: string) => {
 
         }
     }
-    return { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href }
+    const result = { title: seriesTitle, chapter: chapterNum, scansite: scanSite, domain: window.location.origin, link: window.location.href }
+    console.log("[manga-updater] parseTitle", {
+        raw: title,
+        chapterMatch: title.match(chapterRegex)?.[0] ?? null,
+        parsed: result,
+    })
+    return result
 };

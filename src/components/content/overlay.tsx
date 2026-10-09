@@ -6,26 +6,48 @@ import ClickAwayListener from "@mui/material/ClickAwayListener";
 import { CustomSnackBar } from "./snackBar";
 import { extractTitle } from "./parseTitle";
 
+const LOG_PREFIX = "[manga-updater]";
+
 const Overlay = (props: { title: string }) => {
   //   console.log("running manga extension", props.title, document.title);
-  const [data, setData] = useState<any>(extractTitle(document.title));
+  const [data, setData] = useState<any>(() => {
+    const initial = extractTitle(document.title);
+    console.log(`${LOG_PREFIX} overlay mounted`, {
+      url: window.location.href,
+      documentTitle: document.title,
+      parsed: initial,
+    });
+    return initial;
+  });
   const [showPrompt, setShowPrompt] = useState(true);
   const [confirmationPrompt, setConfirmationPrompt] = useState(false);
 
   useEffect(() => {
-    if (props.title && !/\d+/.test(document.title)) {
+    const titleHasDigits = /\d+/.test(document.title);
+    console.log(`${LOG_PREFIX} title effect`, {
+      propsTitle: props.title,
+      documentTitle: document.title,
+      titleHasDigits,
+      domain: data?.domain,
+    });
+    if (props.title && !titleHasDigits) {
       const titleData = extractTitle(document.title);
+      console.log(`${LOG_PREFIX} title has no digits yet; setting data`, titleData);
       setData(titleData);
     }
     if (
-      !/\d+/.test(document.title) &&
+      !titleHasDigits &&
       !data.domain.includes("chrome-extension")
     ) {
+      console.log(`${LOG_PREFIX} starting chapter poll (title had no digits)`);
       const interval = setInterval(() => {
         const titleData = extractTitle(document.title);
         setData(titleData);
         if (titleData.chapter) {
-          console.log(titleData, "title: ", document.title);
+          console.log(`${LOG_PREFIX} poll resolved chapter`, {
+            documentTitle: document.title,
+            parsed: titleData,
+          });
           clearInterval(interval);
         }
       }, 1000);
@@ -46,12 +68,17 @@ const Overlay = (props: { title: string }) => {
     chapter: string,
   ) => {
     let timeUpdated = Date.now() / 1000;
-    console.log(source[scansite], source, scansite);
+    console.log(`${LOG_PREFIX} getLatest input`, {
+      scansite,
+      chapter,
+      hasScansiteSource: Boolean(source[scansite]),
+      sourceKeys: Object.keys(source || {}),
+    });
     if (source[scansite] && "time_updated" in source[scansite]) {
       timeUpdated = source[scansite].time_updated;
     }
     if (source[scansite]) {
-      return {
+      const next = {
         ...source[scansite],
         url: data["link"],
         latest: source[scansite].latest || source.any?.latest || chapter,
@@ -63,8 +90,10 @@ const Overlay = (props: { title: string }) => {
         time_updated: timeUpdated,
         old_chapters: source[scansite].old_chapters || {},
       };
+      console.log(`${LOG_PREFIX} getLatest output (existing source)`, next);
+      return next;
     }
-    return {
+    const fallback = {
       url: data["link"],
       latest: source.any?.latest || chapter,
       chapter: chapter,
@@ -72,41 +101,68 @@ const Overlay = (props: { title: string }) => {
       time_updated: timeUpdated,
       old_chapters: {},
     };
+    console.log(`${LOG_PREFIX} getLatest output (new source)`, fallback);
+    return fallback;
   };
 
   useEffect(() => {
+    console.log(`${LOG_PREFIX} matching parsed page against stored list`, {
+      parsedTitle: data?.title,
+      parsedChapter: data?.chapter,
+      parsedScansite: data?.scansite,
+      url: data?.link,
+    });
     chrome.storage.local.get("manga-list", (result) => {
-      result["manga-list"].forEach((storedMangaItem: Manga) => {
-        // console.log(data.title, x['title'])
-        if (titleSimilarity(data.title, storedMangaItem)) {
-          // update chapter
-          console.log("title is similar", storedMangaItem["title"]);
-          setShowPrompt(false);
-          if (+data["chapter"] > +storedMangaItem["chapter"]) {
-            console.log(
-              `update chapter from ${storedMangaItem["chapter"]} to ${data["chapter"]}`,
-            );
-            storedMangaItem["chapter"] = data["chapter"];
-            storedMangaItem["scansite"] = data["scansite"];
-            storedMangaItem["link"] = data["link"];
-            if (!storedMangaItem["sources"]) {
-              storedMangaItem["sources"] = {};
-            }
-            storedMangaItem["sources"][data["scansite"]] = getLatest(
-              storedMangaItem["sources"],
-              data["scansite"],
-              data["chapter"],
-            );
-            storedMangaItem["sources"]["any"] =
-              storedMangaItem["sources"][data["scansite"]];
-            storedMangaItem["read"] =
-              +storedMangaItem["chapter"] >= +storedMangaItem["latest"];
-            console.log("updated series info:", storedMangaItem);
-            updateManga(storedMangaItem);
-            updatePrompt(false);
+      const storedList: Manga[] = result["manga-list"] || [];
+      console.log(`${LOG_PREFIX} stored list size`, storedList.length);
+      let matchedAny = false;
+      storedList.forEach((storedMangaItem: Manga) => {
+        const similar = titleSimilarity(data.title, storedMangaItem);
+        if (!similar) return;
+        matchedAny = true;
+        console.log(`${LOG_PREFIX} title is similar`, {
+          parsed: data.title,
+          stored: storedMangaItem["title"],
+          currentSource: storedMangaItem["current_source"],
+          parsedChapter: data["chapter"],
+          storedChapter: storedMangaItem["chapter"],
+          storedLatest: storedMangaItem["latest"],
+        });
+        setShowPrompt(false);
+        if (+data["chapter"] > +storedMangaItem["chapter"]) {
+          console.log(
+            `${LOG_PREFIX} chapter advanced ${storedMangaItem["chapter"]} -> ${data["chapter"]} (${storedMangaItem["title"]})`,
+          );
+          storedMangaItem["chapter"] = data["chapter"];
+          storedMangaItem["scansite"] = data["scansite"];
+          storedMangaItem["link"] = data["link"];
+          if (!storedMangaItem["sources"]) {
+            storedMangaItem["sources"] = {};
           }
+          storedMangaItem["sources"][data["scansite"]] = getLatest(
+            storedMangaItem["sources"],
+            data["scansite"],
+            data["chapter"],
+          );
+          storedMangaItem["sources"]["any"] =
+            storedMangaItem["sources"][data["scansite"]];
+          storedMangaItem["read"] =
+            +storedMangaItem["chapter"] >= +storedMangaItem["latest"];
+          console.log(`${LOG_PREFIX} updated series info`, storedMangaItem);
+          updateManga(storedMangaItem);
+          updatePrompt(false);
+        } else {
+          console.log(
+            `${LOG_PREFIX} no update: parsed chapter ${data["chapter"]} <= stored ${storedMangaItem["chapter"]}`,
+          );
         }
       });
+      if (!matchedAny) {
+        console.warn(
+          `${LOG_PREFIX} no stored title matched parsed title`,
+          data.title,
+        );
+      }
     });
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -270,8 +326,16 @@ const titleSimilarity = (title: string, manga: Manga) => {
       similarity++;
     }
   });
-  // console.log('similarity: ', similarity / len, title)
-  return similarity / len >= 0.75;
+  const ratio = similarity / len;
+  if (ratio > 0) {
+    console.log(`${LOG_PREFIX} titleSimilarity`, {
+      parsed: title,
+      stored: manga["title"],
+      ratio,
+      pass: ratio >= 0.75,
+    });
+  }
+  return ratio >= 0.75;
 };
 const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
   chrome.storage.local.get("blacklist", (result) => {
@@ -294,22 +358,51 @@ const addNewManga = (data: any, updatePrompt: (x: boolean) => void) => {
 
 const updateManga = (data: any) => {
   // console.log(url)
+  console.log(`${LOG_PREFIX} updateManga: writing`, {
+    title: data["title"],
+    chapter: data["chapter"],
+    scansite: data["scansite"],
+    read: data["read"],
+  });
   chrome.storage.local.get("manga-list", (result) => {
     let list = result["manga-list"];
+    let matched = false;
     for (let i = 0; i < list.length; i++) {
       if (list[i]["title"] === data["title"]) {
+        matched = true;
         console.log("in db", list[i]["title"]);
         const currentSource = list[i]["current_source"];
+        console.log(`${LOG_PREFIX} updateManga: matched stored item`, {
+          title: list[i]["title"],
+          currentSource,
+          oldChapter: list[i]["sources"]?.[currentSource]?.chapter,
+          newChapter: data["chapter"],
+          sourceKeys: Object.keys(list[i]["sources"] || {}),
+        });
         list[i] = data;
         list[i]["sources"][currentSource].url = data["link"];
         list[i]["sources"][currentSource].chapter = data["chapter"];
-        console.log("list", list);
         break;
       }
     }
-    chrome.storage.local.set({ "manga-list": list });
+    if (!matched) {
+      console.warn(
+        `${LOG_PREFIX} updateManga: no stored item matched title`,
+        data["title"],
+      );
+    }
+    chrome.storage.local.set({ "manga-list": list }, () => {
+      console.log(`${LOG_PREFIX} updateManga: local storage written`);
+    });
     chrome.runtime.sendMessage({ type: "update", data: list }, (response) => {
-      console.log("updated");
+      if (chrome.runtime.lastError) {
+        console.error(
+          `${LOG_PREFIX} updateManga: sendMessage failed`,
+          chrome.runtime.lastError.message,
+        );
+      } else {
+        console.log(`${LOG_PREFIX} updateManga: sent to background`, response);
+      }
     });
   });
 };
